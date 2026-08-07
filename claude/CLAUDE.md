@@ -24,7 +24,7 @@
 
 # Skill thiết kế (opt-in)
 - Các skill sau **chỉ chạy khi người dùng gọi đích danh**, không tự kích hoạt:
-  - Frontend/UI: `taste-skill` (mặc định), `taste-skill-v1`, `soft-skill`, `minimalist-skill`, `brutalist-skill`, `gpt-tasteskill`, `redesign-skill`
+  - Frontend/UI: `taste-skill` (mặc định), `minimalist-skill`, `brutalist-skill`, `redesign-skill`
   - Sinh ảnh / design reference: `imagegen-frontend-web`, `imagegen-frontend-mobile`, `image-to-code-skill`, `brandkit`
   - Khác: `stitch-skill` (sinh DESIGN.md cho Google Stitch), `output-skill` (chống cắt ngắn output)
 

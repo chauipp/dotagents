@@ -76,8 +76,9 @@ merge_rules() {
 # Claude Code dùng Agent tool, Codex dùng spawn_agent — dùng nhầm bản là hỏng skill.
 # $1 = thư mục đích, $2 = tên agent (claude | codex)
 copy_skills() {
-  local dest="$1" agent="$2" name n=0
+  local dest="$1" agent="$2" name n=0 gone=0 manifest="$1/.dotagents-manifest" new
   mkdir -p "$dest"
+  new="$(mktemp)"
   for src in "$KIT_DIR"/shared/skills/*/ "$KIT_DIR/$agent"/skills/*/; do
     [ -d "$src" ] || continue
     name="$(basename "$src")"
@@ -85,9 +86,23 @@ copy_skills() {
     # "cannot overwrite non-directory with directory" và làm script dừng giữa chừng.
     rm -rf "$dest/$name"
     cp -R "$src" "$dest/$name"
+    printf '%s\n' "$name" >> "$new"
     n=$((n + 1))
   done
-  echo "  skills -> $dest ($n skill, bản $agent)"
+  # Dọn skill lần trước dotagents cài mà nay repo không còn. Chỉ đụng vào tên có
+  # trong manifest cũ, nên skill bạn tự thêm tay và .system/ của Codex vẫn nguyên.
+  if [ -f "$manifest" ]; then
+    while IFS= read -r name; do
+      [ -n "$name" ] || continue
+      grep -qxF "$name" "$new" && continue
+      [ -e "$dest/$name" ] || continue
+      rm -rf "$dest/$name"
+      echo "  gỡ    -> $name (không còn trong repo)"
+      gone=$((gone + 1))
+    done < "$manifest"
+  fi
+  mv "$new" "$manifest"
+  echo "  skills -> $dest ($n skill, bản $agent$([ "$gone" -gt 0 ] && echo ", gỡ $gone"))"
 }
 
 backup() {

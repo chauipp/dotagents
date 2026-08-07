@@ -52,7 +52,7 @@ cd ~/duong/dan/du-an
 
 Ghi rules vào `CLAUDE.md` + `AGENTS.md` và skills vào `.claude/skills/` của chính dự án. Commit những thứ đó thì đồng đội clone repo về là có sẵn, không cần cài gì.
 
-Không muốn ~500 KB skills nằm trong repo dự án:
+Không muốn ~1 MB skills nằm trong repo dự án:
 
 ```bash
 ~/dotagents/install.sh --project --rules-only
@@ -61,7 +61,7 @@ Không muốn ~500 KB skills nằm trong repo dự án:
 ## Cấu trúc
 
 ```
-shared/skills/         27 skill giống nhau ở mọi agent (13 skill thiết kế + 14 superpowers)
+shared/skills/         24 skill giống nhau ở mọi agent (10 skill thiết kế + 14 superpowers)
 claude/CLAUDE.md       rules bản Claude Code
 claude/skills/         skill riêng cho Claude Code (graphify)
 codex/AGENTS.md        rules bản Codex
@@ -80,10 +80,10 @@ Thêm agent mới sau này: thêm một thư mục `<agent>/` chứa file rules 
 
 **Rules** — trả lời tiếng Việt (suy luận kỹ thuật bằng tiếng Anh), trigger graphify, danh sách skill opt-in, quy tắc checkbox cho từng task trong plan, quy tắc viết summary khi plan hoàn tất kèm chuỗi trỏ nhau spec ↔ plan ↔ summary.
 
-**Skills** — 28 skill, trong đó 14 skill dưới đây:
+**Skills** — 25 skill, trong đó 11 skill dưới đây:
 
 - `graphify` — biến mọi input thành knowledge graph
-- Frontend/UI: `taste-skill`, `taste-skill-v1`, `soft-skill`, `minimalist-skill`, `brutalist-skill`, `gpt-tasteskill`, `redesign-skill`
+- Frontend/UI: `taste-skill`, `minimalist-skill`, `brutalist-skill`, `redesign-skill`
 - Sinh ảnh: `imagegen-frontend-web`, `imagegen-frontend-mobile`, `image-to-code-skill`, `brandkit`
 - Khác: `stitch-skill`, `output-skill`
 
