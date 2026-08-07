@@ -44,10 +44,16 @@
   báo xong.
 
 # Ghi lại cách làm đúng
+- **Đầu mỗi task, nếu repo có `docs/recipes/` thì `ls` nó trước.** Skill thì tự hiện trong danh
+  sách, còn recipe nằm im — không chủ động nhìn thì viết ra cũng vô ích.
 - Làm xong một task VÀ đã kiểm chứng là đúng thì chạy skill `capturing-what-worked` để cân nhắc
   ghi lại. Nó có cổng chặn riêng, hầu hết task sẽ không đáng ghi — cứ để nó tự quyết.
-- Chỉ đúng trong repo hiện tại → `docs/recipes/<slug>.md` của chính repo đó.
-  Đúng ở mọi dự án → skill trong `~/dotagents/shared/skills/` rồi chạy `~/dotagents/install.sh`.
+- Ba chỗ ghi, `capturing-what-worked` có cây quyết định đầy đủ:
+  - Đúng ở mọi dự án → `~/dotagents/shared/skills/` rồi chạy `~/dotagents/install.sh`
+  - Quy trình riêng của dự án này → `<dự án>/.claude/skills/<tên>/SKILL.md`
+  - Kiến thức riêng của dự án này → `<dự án>/docs/recipes/<slug>.md`
+- Viết skill mà cần chặt chẽ (loại luật agent hay lách) thì dùng skill `writing-skills` — nó bắt
+  chạy subagent thử trước để xem agent lách bằng cớ gì. Chỉ là tài liệu hướng dẫn thì viết thẳng.
 
 # Skill thiết kế (opt-in)
 - Các skill sau **chỉ chạy khi người dùng gọi đích danh**, không tự kích hoạt:

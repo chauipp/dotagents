@@ -35,32 +35,59 @@ trong đó. Nên phải qua cổng.
 - Chỉ đúng một lần này, không lặp lại (sửa một typo, đổi một con số)
 - Đã có file ghi rồi — lúc đó **sửa file cũ**, không đẻ file mới
 
-## Bước 1: Xác định phạm vi — quyết định chỗ ghi
+## Bước 1: Chọn một trong ba chỗ ghi
 
-Tự hỏi: *cách làm này có đúng ở một dự án khác không?*
+Hai câu hỏi, theo đúng thứ tự này.
 
-**KHÔNG — chỉ đúng trong repo này** → ghi thành `docs/recipes/<slug>.md` ngay trong repo đó.
+### Câu 1: cách làm này có đúng ở một dự án khác không?
 
-Ví dụ: "migration trong dự án này phải chạy qua script bọc riêng chứ không gọi thẳng",
-"component trong `admin/` bắt buộc đăng ký ở registry, quên là im lặng không render".
-
-Để trong repo vì: đi cùng code, review được qua PR, ai clone về cũng có, và khi code đổi thì
-sửa cùng một lần.
-
-**CÓ — đúng ở mọi dự án** → viết thành skill trong `~/dotagents/shared/skills/`, rồi
-`~/dotagents/install.sh`.
+**CÓ** → skill chung: `~/dotagents/shared/skills/<tên>/SKILL.md`, rồi chạy
+`~/dotagents/install.sh`. Từ đó mọi dự án trên mọi máy đều có.
 
 Ví dụ: "cách bắt lỗi hydration mismatch của React", "cách dò rò rỉ bộ nhớ trong test Node".
 
-**Không chắc → cứ để trong repo.** Nâng lên thành skill sau, khi gặp lại lần thứ hai ở dự án
-khác. Lần thứ hai đó mới là bằng chứng nó dùng chung được. Đẩy vội lên thành skill là biến
-một quy ước riêng thành luật chung cho mọi dự án.
+**Không chắc → coi như KHÔNG.** Nâng lên skill chung sau, khi gặp lại lần thứ hai ở dự án
+khác — lần thứ hai đó mới là bằng chứng nó dùng chung được. Đẩy vội là biến quy ước riêng
+của một dự án thành luật cho mọi dự án.
+
+### Câu 2: đây là QUY TRÌNH agent phải tự làm theo, hay là KIẾN THỨC để tra?
+
+Chỉ hỏi khi câu 1 trả lời KHÔNG.
+
+**Quy trình** — có các bước phải tuân theo, và tuân sai thì hỏng → **skill riêng của dự án**:
+`<dự án>/.claude/skills/<tên>/SKILL.md`, có frontmatter `name` + `description` như mọi skill khác.
+
+Ví dụ: "trước khi sửa schema phải chạy `npm run db:check` rồi mới generate migration",
+"deploy staging phải qua `scripts/deploy.sh`, gọi thẳng `vercel` là hỏng biến môi trường".
+
+Chọn skill vì agent **tự thấy nó** trong danh sách skill nhờ dòng `description` — không cần ai
+nhắc mới biết là có.
+
+**Kiến thức** — một sự thật cần biết, không có bước nào phải làm theo → `docs/recipes/<slug>.md`.
+
+Ví dụ: "cột `status` trong bảng `orders` còn hai giá trị cũ từ 2023, đừng tưởng chỉ có ba",
+"CI chậm 8 phút là do bước cache, không phải do test".
+
+Chọn recipe vì đây là thứ để **tra khi cần**, biến nó thành skill chỉ làm rác danh sách skill.
+
+**Không chắc quy trình hay kiến thức → chọn skill.** Skill thì agent tự thấy; recipe thì phải
+chủ động đi tìm mới ra.
+
+### Bảng tóm
+
+| Chỗ | Khi nào | Agent tìm ra bằng cách nào |
+|---|---|---|
+| `~/dotagents/shared/skills/` | Đúng ở mọi dự án | Tự thấy, mọi máy mọi dự án |
+| `<dự án>/.claude/skills/` | Quy trình riêng của dự án này | Tự thấy khi mở dự án này |
+| `<dự án>/docs/recipes/` | Kiến thức riêng của dự án này | Phải chủ động `ls` thư mục |
+
+Hai chỗ đầu đi theo git của chính dự án hoặc của dotagents, nên đồng đội clone về là có sẵn.
 
 ## Bước 2: Tìm file đã có trước khi viết mới
 
 ```bash
-ls docs/recipes/ 2>/dev/null
-grep -ril "<từ khoá>" docs/recipes/ ~/dotagents/shared/skills/ 2>/dev/null
+ls docs/recipes/ .claude/skills/ 2>/dev/null
+grep -ril "<từ khoá>" docs/recipes/ .claude/skills/ ~/dotagents/shared/skills/ 2>/dev/null
 ```
 
 Có file gần đúng thì **sửa nó**. Hai file cùng chủ đề mà lệch nhau còn tệ hơn không có file nào.
@@ -97,7 +124,7 @@ thì cái bẫy — thứ đáng giá nhất — là cái bị quên đầu tiê
 |---|---|---|
 | `docs/superpowers/plans/` | Định làm gì | Trước khi làm |
 | `docs/superpowers/summaries/` | Cuối cùng đã làm ra cái gì | Việc cụ thể đó |
-| `docs/recipes/` ← skill này | Lần sau gặp lại thì làm thế nào | Việc sau |
+| `docs/recipes/` + `.claude/skills/` ← skill này | Lần sau gặp lại thì làm thế nào | Việc sau |
 
 Summary kể lại **một lần**. Recipe dạy cho **mọi lần sau**. Đừng nhét recipe vào summary —
 summary viết xong là hết đọc lại, còn recipe phải tra được.
