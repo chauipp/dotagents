@@ -1,31 +1,14 @@
-# Reasoning language
-- For technical/code reasoning (reading code, debugging, writing functions, logic): think internally in English — technical corpora (code, docs, error messages) are overwhelmingly English, so English reasoning is more accurate.
-- For Vietnamese-specific business terminology (role names, approval workflows, process names...): keep the original Vietnamese terms when reasoning; don't translate to English and back, to avoid meaning drift or loss of nuance.
-- Always give the final answer to the user in Vietnamese, regardless of the internal reasoning language.
-
-# graphify
-- **graphify** — biến bất kỳ input nào (code, docs, papers, ảnh, video) thành knowledge graph. Trigger: `/graphify`
-- Khi người dùng gõ `/graphify`, dùng skill `graphify` trước khi làm bất cứ việc gì khác.
+# Ngôn ngữ
+- Luôn trả lời người dùng bằng tiếng Việt.
 
 # superpowers
-- Bộ 14 skill quy trình đã cài sẵn: `brainstorming`, `writing-plans`, `executing-plans`,
-  `subagent-driven-development`, `dispatching-parallel-agents`, `test-driven-development`,
-  `systematic-debugging`, `requesting-code-review`, `receiving-code-review`,
-  `verification-before-completion`, `using-git-worktrees`, `finishing-a-development-branch`,
-  `writing-skills`, `using-superpowers`.
-- **Đọc `using-superpowers` trước** khi bắt đầu một việc nhiều bước — nó là mục lục, chỉ ra
-  việc nào thì dùng skill nào.
-- Quy tắc rút gọn: "làm tính năng X" → `brainstorming` rồi `writing-plans`;
-  "sửa bug này" → `systematic-debugging`; đã có plan → `subagent-driven-development`
-  (hoặc `executing-plans` nếu không có subagent).
-- Muốn dùng subagent (`spawn_agent`/`wait_agent`/`close_agent`) thì cần bật trong
-  `~/.codex/config.toml`:
-  ```toml
-  [features]
-  multi_agent = true
-  ```
-- Các skill này tham chiếu lẫn nhau bằng tên trần (`writing-plans`), không có tiền tố
-  `superpowers:` — bản trong repo đã bỏ tiền tố đó vì không cài dưới dạng plugin.
+- Bộ 14 skill quy trình đã cài sẵn. Việc nhiều bước thì **đọc `using-superpowers` trước** — nó là
+  mục lục, chỉ ra việc nào dùng skill nào.
+- Ánh xạ nhanh: "làm tính năng X" → `brainstorming` rồi `writing-plans`; "sửa bug này" →
+  `systematic-debugging`; đã có plan → `subagent-driven-development`, hoặc `executing-plans` nếu
+  không dùng subagent.
+- Đây là bản copy trong repo, KHÔNG phải plugin, nên các skill gọi nhau bằng tên trần
+  (`writing-plans`) chứ không có tiền tố `superpowers:`.
 
 # Worktree cho mỗi task
 - **Đây là tuyên bố sẵn cho skill `using-git-worktrees` — nó được phép làm luôn, KHÔNG phải
