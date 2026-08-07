@@ -47,7 +47,6 @@
 # Skill thiết kế (opt-in)
 - Các skill sau **chỉ chạy khi người dùng gọi đích danh**, không tự kích hoạt:
   - Frontend/UI: `taste-skill` (mặc định), `minimalist-skill`, `brutalist-skill`, `redesign-skill`
-  - Sinh ảnh / design reference: `imagegen-frontend-web`, `imagegen-frontend-mobile`, `image-to-code-skill`
   - Khác: `output-skill` (chống cắt ngắn output)
 
 # Superpowers: checkbox theo từng task
