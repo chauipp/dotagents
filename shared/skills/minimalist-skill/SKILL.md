@@ -1,5 +1,5 @@
 ---
-name: minimalist-ui
+name: minimalist-skill
 description: [OPT-IN — chỉ dùng khi người dùng gọi tên skill hoặc gõ lệnh tương ứng; KHÔNG tự động kích hoạt.] Clean editorial-style interfaces. Warm monochrome palette, typographic contrast, flat bento grids, muted pastels. No gradients, no heavy shadows.
 ---
 

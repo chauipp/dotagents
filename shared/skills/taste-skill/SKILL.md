@@ -1,5 +1,5 @@
 ---
-name: design-taste-frontend
+name: taste-skill
 description: [OPT-IN — chỉ dùng khi người dùng gọi tên skill hoặc gõ lệnh tương ứng; KHÔNG tự động kích hoạt.] Anti-slop frontend skill for landing pages, portfolios, and redesigns. The agent reads the brief, infers the right design direction, and ships interfaces that do not look templated. Real design systems when applicable, audit-first on redesigns, strict pre-flight check.
 ---
 

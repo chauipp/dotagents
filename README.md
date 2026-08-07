@@ -61,7 +61,7 @@ Không muốn ~1 MB skills nằm trong repo dự án:
 ## Cấu trúc
 
 ```
-shared/skills/         24 skill giống nhau ở mọi agent (10 skill thiết kế + 14 superpowers)
+shared/skills/         22 skill giống nhau ở mọi agent (8 skill thiết kế + 14 superpowers)
 claude/CLAUDE.md       rules bản Claude Code
 claude/skills/         skill riêng cho Claude Code (graphify)
 codex/AGENTS.md        rules bản Codex
@@ -80,12 +80,12 @@ Thêm agent mới sau này: thêm một thư mục `<agent>/` chứa file rules 
 
 **Rules** — trả lời tiếng Việt (suy luận kỹ thuật bằng tiếng Anh), trigger graphify, danh sách skill opt-in, quy tắc checkbox cho từng task trong plan, quy tắc viết summary khi plan hoàn tất kèm chuỗi trỏ nhau spec ↔ plan ↔ summary.
 
-**Skills** — 25 skill, trong đó 11 skill dưới đây:
+**Skills** — 23 skill, trong đó 9 skill dưới đây:
 
 - `graphify` — biến mọi input thành knowledge graph
 - Frontend/UI: `taste-skill`, `minimalist-skill`, `brutalist-skill`, `redesign-skill`
-- Sinh ảnh: `imagegen-frontend-web`, `imagegen-frontend-mobile`, `image-to-code-skill`, `brandkit`
-- Khác: `stitch-skill`, `output-skill`
+- Sinh ảnh: `imagegen-frontend-web`, `imagegen-frontend-mobile`, `image-to-code-skill`
+- Khác: `output-skill`
 
 Skill thiết kế đều **opt-in** — chỉ chạy khi gọi đích danh (`/taste-skill`, `/brandkit`…).
 
