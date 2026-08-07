@@ -6,20 +6,84 @@ Hiện hỗ trợ **Claude Code** và **Codex**. Hai bên đọc cùng một đ�
 
 ## Cho agent đọc
 
-> **Nếu bạn là một coding agent và người dùng đưa bạn repo này:** chạy đúng khối lệnh dưới
-> đây rồi báo lại kết quả. Nó tự dò xem máy đang có agent nào, thiếu skill/rules nào thì cài
-> nấy, và chạy lại nhiều lần vô hại nên không cần kiểm tra trước xem đã cài chưa.
->
-> ```bash
-> git clone https://github.com/chauipp/dotagents.git ~/dotagents 2>/dev/null || git -C ~/dotagents pull --ff-only
-> ~/dotagents/install.sh
-> ```
->
-> Báo `Không thấy ... lẫn ...` nghĩa là máy chưa từng chạy agent nào nên chưa có thư mục
-> config. Chạy lại với `--claude` hoặc `--codex` để nó tạo.
->
-> Xong thì bảo người dùng khởi động lại phiên để nạp rules mới — skill chỉ xuất hiện sau khi
-> khởi động lại. Đừng cài superpowers hay graphify bằng đường nào khác, repo này đã có sẵn cả hai.
+> **Nếu bạn là một coding agent và người dùng đưa bạn repo này:** làm hết 4 bước dưới đây theo
+> đúng thứ tự, rồi báo lại. Mọi bước đều chạy lại được nhiều lần mà vô hại, nên đừng mất công
+> kiểm tra trước xem đã cài chưa — cứ chạy.
+
+### Bước 1 — Cài
+
+```bash
+git clone https://github.com/chauipp/dotagents.git ~/dotagents 2>/dev/null || git -C ~/dotagents pull --ff-only
+~/dotagents/install.sh
+```
+
+Repo public, clone ẩn danh được, không cần SSH key.
+
+Không cần truyền `CLAUDE_CONFIG_DIR` — Claude Code tự export biến đó xuống tiến trình con, nên
+installer luôn trúng đúng thư mục config của phiên đang chạy.
+
+Nếu nó báo `Không thấy ... lẫn ...` thì máy chưa từng chạy agent nào nên chưa có thư mục config.
+Chạy lại với `--claude` hoặc `--codex` để nó tạo:
+
+```bash
+~/dotagents/install.sh --claude    # hoặc --codex, hoặc --all
+```
+
+### Bước 2 — Kiểm phần mềm máy phải có sẵn
+
+Installer khai đúng config nhưng **không tải hộ phần mềm**. Chạy khối này và đọc kết quả:
+
+```bash
+for c in git node npx python3; do
+  command -v "$c" >/dev/null && echo "  có    $c" || echo "  THIẾU $c"
+done
+command -v uv >/dev/null && echo "  có    uv" || echo "  (không có uv — graphify sẽ dùng pip, vẫn chạy được)"
+if ls ~/.cache/ms-playwright/chromium-* >/dev/null 2>&1 \
+  || ls ~/Library/Caches/ms-playwright/chromium-* >/dev/null 2>&1; then
+  echo "  có    chromium"
+else
+  echo "  THIẾU chromium"
+fi
+```
+
+Xử lý theo kết quả:
+
+| Thiếu | Hậu quả | Làm gì |
+|---|---|---|
+| `node` / `npx` | `verifying-ui-with-playwright` **không chạy được** — không có công cụ `browser_*` nào | Báo người dùng cài Node.js. Đừng tự cài bằng package manager hệ thống mà không hỏi |
+| `chromium` | Playwright mở được server nhưng không có trình duyệt | `npx playwright install chromium` (vài trăm MB, cần mạng) |
+| `python3` | Installer đã không chạy nổi từ bước 1 | Báo người dùng |
+| `uv` | Không sao | Bỏ qua, `graphify` sẽ dùng `pip` |
+
+Thiếu thứ nào mà không xử lý được thì **nói thẳng ra trong báo cáo**. Đừng im lặng bỏ qua rồi
+để người dùng phát hiện lúc gọi tới skill.
+
+### Bước 3 — Kiểm đã cài đúng chưa
+
+```bash
+for d in ~/.claude* ~/.codex; do
+  [ -f "$d/skills/.dotagents-manifest" ] || continue
+  r="$d/CLAUDE.md"; [ -f "$r" ] || r="$d/AGENTS.md"
+  echo "  $d — $(wc -l < "$d/skills/.dotagents-manifest") skill, $(grep -c 'dotagents:begin' "$r") khối rules"
+done
+```
+
+Chỉ liệt kê thư mục có `.dotagents-manifest`, tức thư mục thật sự do dotagents cài — thư mục
+config của account khác trên cùng máy không lọt vào.
+
+Mỗi thư mục phải ra **22 skill và đúng 1 khối rules**. Ra 2 khối là file đang chứa rules hai lần —
+xem mục [Lần đầu chạy trên máy đã có sẵn CLAUDE.md](#lần-đầu-chạy-trên-máy-đã-có-sẵn-claudemd).
+Không ra dòng nào là bước 1 chưa chạy được.
+
+### Bước 4 — Báo lại
+
+Nói rõ: cài cho agent nào, bao nhiêu skill, thiếu phần mềm gì chưa xử lý được.
+
+Rồi bảo người dùng **khởi động lại phiên** — skill và rules chỉ có hiệu lực sau khi khởi động lại,
+nhìn ngay bây giờ là chưa thấy.
+
+**Đừng** cài superpowers hay graphify bằng đường nào khác (marketplace, `/plugin`, `pip`) — repo
+này đã có sẵn cả hai, cài chồng là mỗi skill hiện hai lần.
 
 ## Cài
 
