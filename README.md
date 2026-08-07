@@ -114,6 +114,27 @@ Nếu phần cũ **trùng tiêu đề mục** với rules mới, installer sẽ 
 
 Sửa `claude/CLAUDE.md`, `codex/AGENTS.md` hoặc `shared/skills/`, commit, push. Máy khác `git pull && ./install.sh`.
 
+## Máy mới cần gì thêm
+
+Installer lo hết phần config, nhưng ba thứ dưới đây là phần mềm phải có sẵn trên máy:
+
+- **`node` / `npx`** — cho MCP server playwright (`npx @playwright/mcp@latest`). Lần chạy đầu npx tự tải về. Chưa có trình duyệt thì `npx playwright install chromium`.
+- **`uv` hoặc `pip`** — `graphify` tự cài gói `graphifyy` lần đầu chạy, qua `uv tool install` nếu có `uv`, không thì `pip install`.
+- **`GEMINI_API_KEY`** (tuỳ chọn) — chỉ cần nếu muốn graphify trích ngữ nghĩa bằng Gemini.
+
+Những gì installer TỰ làm, không phải đụng tay:
+
+| | Claude Code | Codex |
+|---|---|---|
+| Rules | `CLAUDE.md` | `AGENTS.md` |
+| Skills | `skills/` | `skills/` |
+| MCP playwright | `.claude.json` | `[mcp_servers.playwright]` trong `config.toml` |
+| Subagent | có sẵn | `[features] multi_agent = true` |
+| Tắt plugin superpowers trùng | `settings.json` | — |
+| Bỏ trailer `Co-Authored-By` | `settings.json` | — |
+
+Sửa config đều là **nối thêm phần còn thiếu**, không đụng gì đang có: `.claude.json` đã khai `playwright` rồi thì bỏ qua, `config.toml` đã có `[features]` thì chỉ cảnh báo chứ không sửa (khai trùng tên bảng là lỗi cú pháp TOML).
+
 ## Yêu cầu
 
-`bash`, `python3` (chỉ dùng để sửa `settings.json` an toàn).
+`bash`, `python3` (sửa `settings.json` và `.claude.json` an toàn).

@@ -142,6 +142,51 @@ print("  config -> plugin superpowers tắt (dùng bản trong repo), bỏ trail
 PY
 }
 
+# Khai MCP server playwright cho Claude Code. Không có nó thì skill
+# verifying-ui-with-playwright nằm đó mà không có công cụ browser_* nào để chạy.
+add_playwright_claude() {
+  local f="$1/.claude.json"
+  [ -f "$f" ] || echo '{}' > "$f"
+  python3 - "$f" <<'PY'
+import json, sys
+p = sys.argv[1]
+try:
+    with open(p) as f: cfg = json.load(f)
+except ValueError:
+    print("  .claude.json hỏng — bỏ qua, tự khai playwright bằng: claude mcp add", file=sys.stderr)
+    sys.exit(0)
+srv = cfg.setdefault("mcpServers", {})
+if "playwright" in srv:
+    sys.exit(0)
+srv["playwright"] = {"type": "stdio", "command": "npx",
+                     "args": ["@playwright/mcp@latest"], "env": {}}
+with open(p, "w") as f: json.dump(cfg, f, indent=2, ensure_ascii=False)
+print("  mcp    -> playwright thêm vào " + p)
+PY
+}
+
+# Codex: bật subagent và khai playwright. Chỉ nối thêm bảng còn thiếu vào cuối
+# file, không sửa gì đang có — TOML mà khai trùng tên bảng là lỗi cú pháp.
+tune_codex_config() {
+  local f="$1/config.toml" added=0
+  [ -f "$f" ] || : > "$f"
+  if ! grep -q '^\[features\]' "$f"; then
+    printf '\n[features]\nmulti_agent = true\n' >> "$f"
+    echo "  config -> [features] multi_agent = true"
+    added=1
+  elif ! grep -q 'multi_agent' "$f"; then
+    echo "  ! $f đã có [features] nhưng chưa có multi_agent — tự thêm giúp:" >&2
+    echo "    multi_agent = true   (cần cho subagent-driven-development, graphify)" >&2
+  fi
+  if ! grep -q '^\[mcp_servers\.playwright\]' "$f"; then
+    printf '\n[mcp_servers.playwright]\ncommand = "npx"\nargs = ["@playwright/mcp@latest"]\n' >> "$f"
+    echo "  mcp    -> playwright thêm vào $f"
+    added=1
+  fi
+  [ "$added" = 0 ] && echo "  config -> $f đã đủ"
+  return 0
+}
+
 if [ "$MODE" = project ]; then
   TARGET="${TARGET:-$PWD}"
   [ -d "$TARGET" ] || { echo "Không thấy thư mục: $TARGET" >&2; exit 1; }
@@ -162,6 +207,7 @@ else
     merge_rules "$CLAUDE_DIR/CLAUDE.md" "$KIT_DIR/claude/CLAUDE.md"
     copy_skills "$CLAUDE_DIR/skills" claude
     tune_settings "$CLAUDE_DIR/settings.json"
+    add_playwright_claude "$CLAUDE_DIR"
   fi
   if [ "$WANT_CODEX" = 1 ]; then
     echo "Cài CODEX vào $CODEX_DIR"
@@ -169,6 +215,7 @@ else
     backup "$CODEX_DIR/AGENTS.md"
     merge_rules "$CODEX_DIR/AGENTS.md" "$KIT_DIR/codex/AGENTS.md"
     copy_skills "$CODEX_DIR/skills" codex
+    tune_codex_config "$CODEX_DIR"
   fi
 fi
 
