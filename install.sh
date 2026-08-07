@@ -130,6 +130,34 @@ copy_skills() {
   echo "  skills -> $dest ($n skill, bản $agent$([ "$gone" -gt 0 ] && echo ", gỡ $gone"))"
 }
 
+# Skill do dotagents cài là bản sao, commit vào repo dự án là tự đẻ một nhánh sẽ
+# lệch dần và không ai nhớ cập nhật. Nhưng KHÔNG ignore cả .claude/skills/ được:
+# skill riêng của dự án (capturing-what-worked sinh ra) phải đi theo git thì đồng
+# đội clone về mới có. Nên liệt kê đích danh từng tên trong manifest, và ghi lại
+# cả khối mỗi lần cài để danh sách không bị cũ.
+ignore_kit_skills() {
+  local target="$1" gi="$1/.gitignore" manifest="$1/.claude/skills/.dotagents-manifest"
+  local b="# dotagents:begin skills" e="# dotagents:end skills" tmp
+  [ -f "$manifest" ] || return 0
+  tmp="$(mktemp)"
+  if [ -f "$gi" ]; then
+    awk -v b="$b" -v e="$e" '$0==b{s=1} !s{print} $0==e{s=0}' "$gi" > "$tmp"
+    [ -s "$tmp" ] && [ -n "$(tail -c 1 "$tmp")" ] && printf '\n' >> "$tmp"
+  fi
+  {
+    printf '%s\n' "$b"
+    printf '# Skill do ~/dotagents cài — mỗi máy tự chạy install.sh --project.\n'
+    printf '# Skill riêng của dự án nằm cạnh đây thì VẪN được commit bình thường.\n'
+    while IFS= read -r name; do
+      [ -n "$name" ] && printf '.claude/skills/%s/\n' "$name"
+    done < "$manifest"
+    printf '.claude/skills/.dotagents-manifest\n'
+    printf '%s\n' "$e"
+  } >> "$tmp"
+  mv "$tmp" "$gi"
+  echo "  ignore -> $(wc -l < "$manifest" | tr -d ' ') skill của kit thêm vào .gitignore"
+}
+
 backup() {
   [ -f "$1" ] && [ -s "$1" ] && cp "$1" "$1.bak.$(date +%Y%m%d%H%M%S)" || true
 }
@@ -209,6 +237,7 @@ if [ "$MODE" = project ]; then
   merge_rules "$TARGET/AGENTS.md" "$KIT_DIR/codex/AGENTS.md"
   if [ "$RULES_ONLY" = 0 ]; then
     copy_skills "$TARGET/.claude/skills" claude
+    [ -d "$TARGET/.git" ] && ignore_kit_skills "$TARGET"
     # Chế độ project cố ý KHÔNG sửa config toàn máy — cài cho một dự án mà đi
     # đổi settings của cả máy là sai. Nhưng phải nói ra hai thứ còn thiếu, không
     # thì người dùng tưởng đã xong.

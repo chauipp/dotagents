@@ -117,9 +117,13 @@ cd ~/duong/dan/du-an
 ~/dotagents/install.sh --project
 ```
 
-Ghi rules vào `CLAUDE.md` + `AGENTS.md` và skills vào `.claude/skills/` của chính dự án. Commit những thứ đó thì đồng đội clone repo về là có sẵn, không cần cài gì.
+Ghi rules vào `CLAUDE.md` + `AGENTS.md` và skills vào `.claude/skills/` của chính dự án.
 
-Không muốn ~1 MB skills nằm trong repo dự án:
+**Skills không đi vào git.** Installer ghi thêm một khối vào `.gitignore` liệt kê đích danh 22 skill của kit, nên `git add -A` không kéo chúng theo — bản sao mà commit vào là tạo một nhánh sẽ lệch dần khỏi bộ kit. Đồng đội cứ chạy `install.sh --project` một lần là có.
+
+Khối đó chỉ chặn tên skill của kit. Skill bạn tự viết cho dự án (`.claude/skills/deploy-staging/`…) vẫn commit bình thường — đó mới là thứ thuộc về repo.
+
+Chỉ muốn rules, khỏi cần thư mục skills trong dự án:
 
 ```bash
 ~/dotagents/install.sh --project --rules-only

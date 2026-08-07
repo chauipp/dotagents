@@ -38,6 +38,14 @@
 - Viết skill mà cần chặt chẽ (loại luật agent hay lách) thì dùng skill `writing-skills` — nó bắt
   chạy subagent thử trước để xem agent lách bằng cớ gì. Chỉ là tài liệu hướng dẫn thì viết thẳng.
 
+# Không commit skill của bộ kit vào repo dự án
+- `.claude/skills/` trong một dự án chứa hai loại: skill do `~/dotagents/install.sh --project`
+  cài (bản sao của bộ kit) và skill viết riêng cho dự án. **Chỉ loại thứ hai được commit.**
+- Installer tự ghi khối `# dotagents:begin skills` vào `.gitignore` liệt kê đích danh skill của
+  kit. Đừng xoá khối đó, cũng đừng `git add -f` những đường dẫn nằm trong đó.
+- Máy khác thiếu skill thì chạy `~/dotagents/install.sh --project`, chứ không phải lấy từ repo
+  dự án — commit bản sao vào là tạo một nhánh sẽ lệch dần khỏi bộ kit mà không ai nhớ cập nhật.
+
 # Skill thiết kế (opt-in)
 - Các skill sau **chỉ chạy khi người dùng gọi đích danh**, không tự kích hoạt:
   - Frontend/UI: `taste-skill` (mặc định), `minimalist-skill`, `brutalist-skill`, `redesign-skill`
