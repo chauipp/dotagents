@@ -83,6 +83,9 @@ merge_rules() {
   echo "  rules  -> $dest"
 }
 
+REMOVED_SKILLS="brandkit gpt-tasteskill image-to-code-skill imagegen-frontend-mobile
+imagegen-frontend-web soft-skill stitch-skill taste-skill-v1"
+
 # Copy shared/skills/, rồi chồng <agent>/skills/ lên đè.
 # Một vài skill (graphify) có biến thể riêng cho từng agent vì gọi tool khác nhau:
 # Claude Code dùng Agent tool, Codex dùng spawn_agent — dùng nhầm bản là hỏng skill.
@@ -100,6 +103,16 @@ copy_skills() {
     cp -R "$src" "$dest/$name"
     printf '%s\n' "$name" >> "$new"
     n=$((n + 1))
+  done
+  # Skill từng phát hành rồi bị cắt. Máy cài từ thời chưa có manifest thì manifest
+  # không hề biết chúng tồn tại, nên chạy lại bao nhiêu lần cũng không gỡ được —
+  # phải gọi thẳng tên ra đây. Chỉ thêm vào đây tên ĐÃ TỪNG nằm trong repo.
+  for name in $REMOVED_SKILLS; do
+    grep -qxF "$name" "$new" && continue
+    [ -e "$dest/$name" ] || continue
+    rm -rf "$dest/$name"
+    echo "  gỡ    -> $name (đã cắt khỏi bộ kit)"
+    gone=$((gone + 1))
   done
   # Dọn skill lần trước dotagents cài mà nay repo không còn. Chỉ đụng vào tên có
   # trong manifest cũ, nên skill bạn tự thêm tay và .system/ của Codex vẫn nguyên.

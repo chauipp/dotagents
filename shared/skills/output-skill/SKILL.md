@@ -1,6 +1,6 @@
 ---
 name: output-skill
-description: [OPT-IN — chỉ dùng khi người dùng gọi tên skill hoặc gõ lệnh tương ứng; KHÔNG tự động kích hoạt.] Overrides default LLM truncation behavior. Enforces complete code generation, bans placeholder patterns, and handles token-limit splits cleanly. Apply to any task requiring exhaustive, unabridged output.
+description: Chỉ dùng khi người dùng gọi đích danh skill này. Overrides default LLM truncation behavior. Enforces complete code generation, bans placeholder patterns, and handles token-limit splits cleanly. Apply to any task requiring exhaustive, unabridged output.
 ---
 
 # Full-Output Enforcement
