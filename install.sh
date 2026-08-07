@@ -52,15 +52,27 @@ fi
 # Ghép khối rules vào file đích, thay thế khối cũ nếu đã có.
 # $1 = file đích, $2 = file rules nguồn
 merge_rules() {
-  local dest="$1" src="$2" tmp
+  local dest="$1" src="$2" tmp kept dup
   tmp="$(mktemp)"
   if [ -f "$dest" ] && grep -qF "$BEGIN_MARK" "$dest"; then
     # Giữ nguyên phần người dùng tự viết ngoài khối.
     awk -v b="$BEGIN_MARK" -v e="$END_MARK" '
       index($0,b){skip=1} !skip{print} index($0,e){skip=0}' "$dest" > "$tmp"
   elif [ -f "$dest" ] && [ -s "$dest" ]; then
+    # Lần đầu trên file đã có nội dung: giữ nguyên phần cũ ở trên, khối mới nối
+    # xuống dưới. Không tự xoá phần cũ — không cách nào chắc chắn phân biệt được
+    # rules bản cũ với ghi chú riêng của người dùng.
     cat "$dest" > "$tmp"
     printf '\n' >> "$tmp"
+    kept=$(wc -l < "$dest" | tr -d ' ')
+    # Trùng tiêu đề mục là dấu hiệu phần cũ chính là bản cũ của rules này.
+    dup=$(comm -12 <(grep '^# ' "$dest" | sort -u) <(grep '^# ' "$src" | sort -u) | wc -l | tr -d ' ')
+    echo "  ! $dest đã có sẵn $kept dòng, giữ nguyên phía trên khối dotagents." >&2
+    if [ "$dup" -gt 0 ]; then
+      echo "  ! $dup mục trùng tiêu đề với rules mới — nhiều khả năng đó là BẢN CŨ của" >&2
+      echo "    chính bộ rules này, và bản cũ sẽ mâu thuẫn với bản mới (danh sách skill" >&2
+      echo "    đã đổi). Mở file ra, xoá phần nằm TRÊN dòng dotagents:begin nếu đúng vậy." >&2
+    fi
   fi
   {
     printf '%s\n' "$BEGIN_MARK"

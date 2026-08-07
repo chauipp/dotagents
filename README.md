@@ -100,7 +100,15 @@ Nằm trong `shared/skills/` chứ không cài dưới dạng plugin, vì mục 
 
 ## Chạy lại
 
-An toàn. Rules nằm giữa cặp marker `dotagents:begin` / `dotagents:end`, chạy lại chỉ thay phần trong khối — mọi thứ bạn tự viết ngoài khối được giữ nguyên. File rules cũ được backup kèm timestamp. Skills bị ghi đè theo tên; skill hệ thống của Codex trong `~/.codex/skills/.system/` không bị đụng tới.
+An toàn. Rules nằm giữa cặp marker `dotagents:begin` / `dotagents:end`, chạy lại chỉ thay phần trong khối — mọi thứ bạn tự viết ngoài khối được giữ nguyên. File rules cũ được backup kèm timestamp.
+
+Skills bị ghi đè theo tên. Skill nào lần trước dotagents cài mà nay repo không còn thì bị gỡ — đối chiếu qua file `.dotagents-manifest` nằm trong chính thư mục skills, nên skill bạn tự thêm tay và `~/.codex/skills/.system/` của Codex không bị đụng tới.
+
+### Lần đầu chạy trên máy đã có sẵn CLAUDE.md
+
+Installer giữ nguyên nội dung cũ và nối khối `dotagents` xuống dưới. Nó **không** tự xoá phần cũ, vì không có cách nào chắc chắn phân biệt rules bản cũ với ghi chú riêng của bạn.
+
+Nếu phần cũ **trùng tiêu đề mục** với rules mới, installer sẽ cảnh báo: gần như chắc chắn đó là bản cũ của chính bộ rules này, và để lại thì hai bản mâu thuẫn nhau — danh sách skill đã đổi qua nhiều lần cắt, agent đọc bản cũ sẽ tưởng những skill đã gỡ vẫn còn. Lúc đó mở file ra, xoá phần nằm **trên** dòng `dotagents:begin`.
 
 ## Cập nhật bộ kit
 
