@@ -94,8 +94,10 @@ backup() {
   [ -f "$1" ] && [ -s "$1" ] && cp "$1" "$1.bak.$(date +%Y%m%d%H%M%S)" || true
 }
 
-# Bật plugin superpowers trong settings.json mà không đụng các key khác.
-enable_plugins() {
+# superpowers được copy thẳng vào skills/ nên plugin cùng tên phải tắt,
+# không thì mỗi skill hiện hai lần (bản plugin + bản repo).
+# Cũng tắt luôn trailer Co-Authored-By: Claude trong commit.
+tune_settings() {
   local settings="$1"
   [ -f "$settings" ] || echo '{}' > "$settings"
   python3 - "$settings" <<'PY'
@@ -104,11 +106,12 @@ p = sys.argv[1]
 try:
     with open(p) as f: cfg = json.load(f)
 except ValueError:
-    print("  settings.json hỏng — bỏ qua, hãy bật plugin bằng /plugin", file=sys.stderr)
+    print("  settings.json hỏng — bỏ qua", file=sys.stderr)
     sys.exit(0)
-cfg.setdefault("enabledPlugins", {})["superpowers@claude-plugins-official"] = True
+cfg.setdefault("enabledPlugins", {})["superpowers@claude-plugins-official"] = False
+cfg["includeCoAuthoredBy"] = False
 with open(p, "w") as f: json.dump(cfg, f, indent=2, ensure_ascii=False)
-print("  plugin -> superpowers bật trong " + p)
+print("  config -> plugin superpowers tắt (dùng bản trong repo), bỏ trailer Co-Authored-By")
 PY
 }
 
@@ -131,7 +134,7 @@ else
     backup "$CLAUDE_DIR/CLAUDE.md"
     merge_rules "$CLAUDE_DIR/CLAUDE.md" "$KIT_DIR/claude/CLAUDE.md"
     copy_skills "$CLAUDE_DIR/skills" claude
-    enable_plugins "$CLAUDE_DIR/settings.json"
+    tune_settings "$CLAUDE_DIR/settings.json"
   fi
   if [ "$WANT_CODEX" = 1 ]; then
     echo "Cài CODEX vào $CODEX_DIR"

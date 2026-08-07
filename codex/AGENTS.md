@@ -7,6 +7,26 @@
 - **graphify** — biến bất kỳ input nào (code, docs, papers, ảnh, video) thành knowledge graph. Trigger: `/graphify`
 - Khi người dùng gõ `/graphify`, dùng skill `graphify` trước khi làm bất cứ việc gì khác.
 
+# superpowers
+- Bộ 14 skill quy trình đã cài sẵn: `brainstorming`, `writing-plans`, `executing-plans`,
+  `subagent-driven-development`, `dispatching-parallel-agents`, `test-driven-development`,
+  `systematic-debugging`, `requesting-code-review`, `receiving-code-review`,
+  `verification-before-completion`, `using-git-worktrees`, `finishing-a-development-branch`,
+  `writing-skills`, `using-superpowers`.
+- **Đọc `using-superpowers` trước** khi bắt đầu một việc nhiều bước — nó là mục lục, chỉ ra
+  việc nào thì dùng skill nào.
+- Quy tắc rút gọn: "làm tính năng X" → `brainstorming` rồi `writing-plans`;
+  "sửa bug này" → `systematic-debugging`; đã có plan → `subagent-driven-development`
+  (hoặc `executing-plans` nếu không có subagent).
+- Muốn dùng subagent (`spawn_agent`/`wait_agent`/`close_agent`) thì cần bật trong
+  `~/.codex/config.toml`:
+  ```toml
+  [features]
+  multi_agent = true
+  ```
+- Các skill này tham chiếu lẫn nhau bằng tên trần (`writing-plans`), không có tiền tố
+  `superpowers:` — bản trong repo đã bỏ tiền tố đó vì không cài dưới dạng plugin.
+
 # Skill thiết kế (opt-in)
 - Các skill sau **chỉ chạy khi người dùng gọi đích danh**, không tự kích hoạt:
   - Frontend/UI: `taste-skill` (mặc định), `taste-skill-v1`, `soft-skill`, `minimalist-skill`, `brutalist-skill`, `gpt-tasteskill`, `redesign-skill`

@@ -4,6 +4,20 @@ Rules + skills dùng chung cho các coding agent. Clone về máy nào, dự án
 
 Hiện hỗ trợ **Claude Code** và **Codex**. Hai bên đọc cùng một định dạng `SKILL.md`, nên `shared/skills/` phục vụ được cả hai mà không cần chuyển đổi.
 
+## Cho agent đọc
+
+> **Nếu bạn là một coding agent và người dùng đưa bạn repo này:** chạy đúng khối lệnh dưới
+> đây rồi báo lại kết quả. Nó tự dò xem máy đang có agent nào, thiếu skill/rules nào thì cài
+> nấy, và chạy lại nhiều lần vô hại nên không cần kiểm tra trước xem đã cài chưa.
+>
+> ```bash
+> git clone https://github.com/chauipp/dotagents.git ~/dotagents 2>/dev/null || git -C ~/dotagents pull --ff-only
+> ~/dotagents/install.sh
+> ```
+>
+> Xong thì bảo người dùng khởi động lại phiên để nạp rules mới. Đừng cài superpowers hay
+> graphify bằng đường nào khác — repo này đã có sẵn cả hai.
+
 ## Cài
 
 ```bash
@@ -47,12 +61,13 @@ Không muốn ~500 KB skills nằm trong repo dự án:
 ## Cấu trúc
 
 ```
-shared/skills/         13 skill giống nhau ở mọi agent
+shared/skills/         27 skill giống nhau ở mọi agent (13 skill thiết kế + 14 superpowers)
 claude/CLAUDE.md       rules bản Claude Code
-claude/skills/         skill có biến thể riêng cho Claude Code
+claude/skills/         skill riêng cho Claude Code (graphify)
 codex/AGENTS.md        rules bản Codex
-codex/skills/          skill có biến thể riêng cho Codex
+codex/skills/          skill riêng cho Codex (graphify)
 install.sh
+SUPERPOWERS-LICENSE    MIT, cho 14 skill copy từ obra/superpowers
 ```
 
 Installer copy `shared/skills/` trước, rồi chồng `<agent>/skills/` lên đè. Hầu hết skill chỉ là văn bản nên dùng chung được; skill nào **gọi tool cụ thể** thì phải tách bản.
@@ -65,7 +80,7 @@ Thêm agent mới sau này: thêm một thư mục `<agent>/` chứa file rules 
 
 **Rules** — trả lời tiếng Việt (suy luận kỹ thuật bằng tiếng Anh), trigger graphify, danh sách skill opt-in, quy tắc checkbox cho từng task trong plan, quy tắc viết summary khi plan hoàn tất kèm chuỗi trỏ nhau spec ↔ plan ↔ summary.
 
-**Skills** — 14 skill:
+**Skills** — 28 skill, trong đó 14 skill dưới đây:
 
 - `graphify` — biến mọi input thành knowledge graph
 - Frontend/UI: `taste-skill`, `taste-skill-v1`, `soft-skill`, `minimalist-skill`, `brutalist-skill`, `gpt-tasteskill`, `redesign-skill`
@@ -74,7 +89,14 @@ Thêm agent mới sau này: thêm một thư mục `<agent>/` chứa file rules 
 
 Skill thiết kế đều **opt-in** — chỉ chạy khi gọi đích danh (`/taste-skill`, `/brandkit`…).
 
-**Plugin superpowers** (chỉ Claude Code) — installer bật sẵn trong `settings.json`. Lần đầu trên máy mới, nếu plugin chưa tự tải về thì cài bằng `/plugin`.
+**superpowers** — 14 skill quy trình (`brainstorming`, `writing-plans`, `executing-plans`, `subagent-driven-development`, `test-driven-development`, `systematic-debugging`…), copy từ [obra/superpowers](https://github.com/obra/superpowers) v6.2.0, giấy phép MIT (xem `SUPERPOWERS-LICENSE`).
+
+Nằm trong `shared/skills/` chứ không cài dưới dạng plugin, vì mục tiêu của repo là "đưa link cho agent bất kỳ trên máy bất kỳ là cài được": agent chạy `bash` thì gọi được `git clone`, chứ không gọi được `/plugin`. Codex vốn cũng không đọc plugin của Claude Code. Hệ quả:
+
+- Tiền tố `superpowers:` trong các tham chiếu chéo giữa skill đã bị bỏ — cài dạng skill thường thì tên là `writing-plans`, không phải `superpowers:writing-plans`.
+- Plugin `superpowers@claude-plugins-official` bị installer **tắt** trong `settings.json`, nếu không mỗi skill sẽ hiện hai lần.
+- Mất hook `SessionStart` của plugin (thứ nhồi sẵn `using-superpowers` vào đầu mỗi phiên). Thay vào đó `CLAUDE.md` / `AGENTS.md` có mục `# superpowers` liệt kê skill và chỉ khi nào dùng cái nào — rules cũng được nạp mỗi phiên nên tác dụng tương đương.
+- Không tự cập nhật theo marketplace. Lên bản mới: copy lại `skills/` từ upstream vào `shared/skills/` rồi `sed -i 's/superpowers://g'`.
 
 ## Chạy lại
 
