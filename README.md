@@ -15,8 +15,11 @@ Hiện hỗ trợ **Claude Code** và **Codex**. Hai bên đọc cùng một đ�
 > ~/dotagents/install.sh
 > ```
 >
-> Xong thì bảo người dùng khởi động lại phiên để nạp rules mới. Đừng cài superpowers hay
-> graphify bằng đường nào khác — repo này đã có sẵn cả hai.
+> Báo `Không thấy ... lẫn ...` nghĩa là máy chưa từng chạy agent nào nên chưa có thư mục
+> config. Chạy lại với `--claude` hoặc `--codex` để nó tạo.
+>
+> Xong thì bảo người dùng khởi động lại phiên để nạp rules mới — skill chỉ xuất hiện sau khi
+> khởi động lại. Đừng cài superpowers hay graphify bằng đường nào khác, repo này đã có sẵn cả hai.
 
 ## Cài
 
