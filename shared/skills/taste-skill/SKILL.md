@@ -1,6 +1,6 @@
 ---
 name: taste-skill
-description: Chỉ dùng khi người dùng gọi đích danh skill này. Anti-slop frontend skill for landing pages, portfolios, and redesigns. The agent reads the brief, infers the right design direction, and ships interfaces that do not look templated. Real design systems when applicable, audit-first on redesigns, strict pre-flight check.
+description: Dùng khi người dùng yêu cầu làm landing page, portfolio hoặc dựng lại giao diện cho ra dáng thiết kế thật, không nhìn như template. Đọc brief rồi tự suy ra hướng thiết kế, dùng design system thật khi có, redesign thì audit trước, có bước pre-flight bắt buộc. Chỉ chạy khi người dùng gọi đích danh skill này.
 ---
 
 # tasteskill: Anti-Slop Frontend Skill

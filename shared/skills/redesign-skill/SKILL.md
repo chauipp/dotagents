@@ -1,6 +1,6 @@
 ---
 name: redesign-skill
-description: Chỉ dùng khi người dùng gọi đích danh skill này. Upgrades existing websites and apps to premium quality. Audits current design, identifies generic AI patterns, and applies high-end design standards without breaking functionality. Works with any CSS framework or vanilla CSS.
+description: Dùng khi người dùng đưa một website hoặc app đã có và muốn nâng lên chất lượng cao cấp. Audit giao diện hiện tại, chỉ ra chỗ nào đang là mẫu AI generic, rồi áp chuẩn thiết kế cao cấp mà không làm hỏng chức năng. Chạy được với mọi CSS framework hoặc CSS thuần. Chỉ chạy khi người dùng gọi đích danh skill này.
 ---
 
 # Redesign Skill

@@ -51,25 +51,30 @@
   - Frontend/UI: `taste-skill` (mặc định), `minimalist-skill`, `brutalist-skill`, `redesign-skill`
   - Khác: `output-skill` (chống cắt ngắn output)
 
+# Tài liệu kế hoạch: spec, plan, summary
+- Ba file nằm trong `docs/superpowers/{specs,plans,summaries}/`. Dự án chưa có thì tạo đủ cả ba
+  folder ngay lần đầu viết plan. (Tên folder giữ nguyên vì các dự án cũ đang dùng.)
+- Cùng ngày, cùng slug: `<ngày>-<slug>-design.md` / `<ngày>-<slug>.md` / `<ngày>-<slug>-summary.md`.
+- **Trỏ nhau cả ba mắt**, để mở file nào cũng đi tới hai file kia:
+  - Cuối spec: `## Plan thực thi` → `../plans/…`, thêm ngay khi plan vừa tạo.
+  - Cuối plan: `## Kết quả` → `../summaries/…` (thay cho mục `## Summary` cũ).
+  - Đầu summary: dòng trỏ về `../specs/…` và `../plans/…`.
+
 # Tài liệu kế hoạch: checkbox theo từng task
-- Khi viết plan nhiều bước: ngoài checkbox cho từng step nhỏ (`- [ ] Step N: ...`), mỗi TASK cấp cao cũng phải có checkbox riêng ngay trên dòng heading, ví dụ `- [ ] Task N: [Tên component]` thay vì chỉ `### Task N: ...`.
-- Khi thực thi plan: làm xong (và pass review nếu có) task nào phải sửa ngay file plan để tick checkbox của TASK đó thành `- [x]` — không chỉ cập nhật todo list nội bộ. Làm ngay lúc đó, đừng dồn lại cuối phiên.
-- Lý do: nếu phiên bị ngắt hoặc hit rate limit, chỉ cần mở lại file plan là biết ngay đã làm đến task nào, không cần dựa vào trạng thái todo list (không persist).
+- Trong plan, mỗi TASK cấp cao phải có checkbox riêng trên dòng heading — `- [ ] Task N: [tên]`,
+  không phải `### Task N:` trơn. Step nhỏ vẫn có checkbox như skill mặc định yêu cầu.
+- Làm xong task nào (và pass review nếu có) thì **sửa file plan tick `- [x]` ngay lúc đó**, đừng
+  dồn tới cuối phiên và đừng coi todo list nội bộ là đủ.
+- Lý do: phiên bị ngắt hay hit rate limit thì mở file plan ra là biết đang dở ở đâu. Todo list
+  không persist.
 
-# Tài liệu kế hoạch: summary khi xong plan
-- Khi TẤT CẢ task của một plan đã tick `- [x]` (plan hoàn tất): viết summary thành **file riêng** trong folder `docs/superpowers/summaries/`, trước khi báo cáo là xong. **Không** ghi summary vào trong file plan nữa.
-- Tên file summary theo đúng khuôn của spec và plan: spec là `<ngày>-<slug>-design.md`, plan là `<ngày>-<slug>.md`, thì summary là `<ngày>-<slug>-summary.md`. Cùng ngày, cùng slug — nhìn tên là biết ba file thuộc cùng một việc.
-- **Chuỗi trỏ nhau — bắt buộc cả ba mắt**, để mở bất kỳ file nào cũng đi được tới hai file kia:
-  - Đầu file summary: dòng trỏ tới spec và tới plan (đường dẫn tương đối, `../specs/…` và `../plans/…`).
-  - Cuối file plan: mục `## Kết quả` trỏ tới file summary (`../summaries/…`).
-  - Cuối file spec: mục `## Plan thực thi` trỏ tới file plan (`../plans/…`). Thêm ngay khi plan được tạo, không đợi tới lúc xong.
-- Nội dung file summary gồm:
-  - **Đã làm gì**: 3–6 gạch đầu dòng mô tả kết quả thực tế (tính năng/hành vi người dùng thấy được), không lặp lại tên task.
-  - **File chính**: danh sách file được tạo/sửa đáng kể, kèm một câu vai trò của từng file.
-  - **Khác với plan**: chỗ nào làm khác thiết kế ban đầu và vì sao. Nếu không lệch gì thì ghi "không lệch".
-  - **Còn dở / cần lưu ý**: phần bị hoãn, TODO, hạn chế đã biết, hoặc thao tác thủ công người dùng phải tự làm (đổi config, khai báo key...). Không có thì ghi "không".
-- Viết summary dựa trên những gì THỰC SỰ đã làm (diff, commit), không chép lại mô tả trong plan — plan là dự định, summary là kết quả.
-- Lý do tách file: plan dài hàng trăm dòng và là tài liệu *dự định*, đọc lại vài tuần sau chỉ muốn biết cuối cùng ra cái gì. Để summary riêng thì `ls docs/superpowers/summaries/` là thấy toàn bộ những việc đã làm xong, không phải mở từng plan để dò; và mỗi file summary dùng trực tiếp được làm mô tả PR / changelog.
-
-# Dự án mới
-- Ở dự án chưa có `docs/superpowers/`, tạo đủ ba folder `specs/`, `plans/`, `summaries/` ngay lần đầu viết plan — đừng để spec và plan nằm lạc chỗ khác.
+# Tài liệu kế hoạch: viết summary khi plan xong
+- Tất cả task đã `- [x]` thì viết summary thành **file riêng** trước khi báo xong. Không nhét
+  summary vào trong file plan.
+- Bốn mục: **Đã làm gì** (3–6 gạch, kết quả người dùng thấy được, không chép lại tên task) /
+  **File chính** (file tạo–sửa đáng kể, mỗi file một câu vai trò) / **Khác với plan** (lệch chỗ
+  nào, vì sao; không lệch thì ghi "không lệch") / **Còn dở / cần lưu ý** (TODO, hạn chế, việc
+  người dùng phải tự làm như đổi config hay khai key; không có thì ghi "không").
+- Viết dựa trên diff và commit, không chép mô tả trong plan — plan là dự định, summary là kết quả.
+- Lý do tách file: `ls docs/superpowers/summaries/` là thấy hết việc đã xong, khỏi mở từng plan
+  dài hàng trăm dòng để dò; và mỗi summary dùng thẳng được làm mô tả PR hay changelog.

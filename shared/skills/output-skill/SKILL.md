@@ -1,6 +1,6 @@
 ---
 name: output-skill
-description: Chỉ dùng khi người dùng gọi đích danh skill này. Overrides default LLM truncation behavior. Enforces complete code generation, bans placeholder patterns, and handles token-limit splits cleanly. Apply to any task requiring exhaustive, unabridged output.
+description: Dùng khi cần output dài mà không được cắt ngắn: sinh code đầy đủ, cấm mọi kiểu placeholder hay '... phần còn lại tương tự', và xử lý gọn khi phải chia nhiều lượt vì chạm giới hạn token. Chỉ chạy khi người dùng gọi đích danh skill này.
 ---
 
 # Full-Output Enforcement

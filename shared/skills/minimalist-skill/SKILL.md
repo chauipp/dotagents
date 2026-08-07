@@ -1,6 +1,6 @@
 ---
 name: minimalist-skill
-description: Chỉ dùng khi người dùng gọi đích danh skill này. Clean editorial-style interfaces. Warm monochrome palette, typographic contrast, flat bento grids, muted pastels. No gradients, no heavy shadows.
+description: Dùng khi người dùng yêu cầu giao diện editorial tối giản: monochrome ấm, tương phản bằng typography, bento grid phẳng, pastel trầm, không gradient, không đổ bóng nặng. Chỉ chạy khi người dùng gọi đích danh skill này.
 ---
 
 # Protocol: Premium Utilitarian Minimalism UI Architect

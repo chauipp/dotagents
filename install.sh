@@ -158,8 +158,16 @@ ignore_kit_skills() {
   echo "  ignore -> $(wc -l < "$manifest" | tr -d ' ') skill của kit thêm vào .gitignore"
 }
 
+# Giữ 3 bản gần nhất. Rules nằm trong marker nên các bản backup gần như trùng
+# nhau — cài lại vài chục lần là vài chục file rác, mà bản thứ tư trở đi chưa
+# bao giờ dùng tới. Xoá theo đúng tiền tố "<file>.bak." nên không đụng file khác.
 backup() {
-  [ -f "$1" ] && [ -s "$1" ] && cp "$1" "$1.bak.$(date +%Y%m%d%H%M%S)" || true
+  local f="$1" old
+  [ -f "$f" ] && [ -s "$f" ] || return 0
+  cp "$f" "$f.bak.$(date +%Y%m%d%H%M%S)"
+  old="$(ls -1t "$f".bak.* 2>/dev/null | tail -n +4)"
+  [ -n "$old" ] && printf '%s\n' "$old" | while IFS= read -r b; do rm -f "$b"; done
+  return 0
 }
 
 # superpowers được copy thẳng vào skills/ nên plugin cùng tên phải tắt,

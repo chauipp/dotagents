@@ -1,6 +1,6 @@
 ---
 name: brutalist-skill
-description: Chỉ dùng khi người dùng gọi đích danh skill này. Raw mechanical interfaces fusing Swiss typographic print with military terminal aesthetics. Rigid grids, extreme type scale contrast, utilitarian color, analog degradation effects. For data-heavy dashboards, portfolios, or editorial sites that need to feel like declassified blueprints.
+description: Dùng khi người dùng yêu cầu giao diện thô mộc kiểu Swiss print pha terminal quân sự: lưới cứng, cỡ chữ tương phản cực mạnh, màu chức năng, hiệu ứng nhiễu analog. Hợp với dashboard dày dữ liệu, portfolio hay trang editorial muốn trông như bản vẽ vừa giải mật. Chỉ chạy khi người dùng gọi đích danh skill này.
 ---
 
 # SKILL: Industrial Brutalism & Tactical Telemetry UI
