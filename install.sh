@@ -196,6 +196,26 @@ if [ "$MODE" = project ]; then
   merge_rules "$TARGET/AGENTS.md" "$KIT_DIR/codex/AGENTS.md"
   if [ "$RULES_ONLY" = 0 ]; then
     copy_skills "$TARGET/.claude/skills" claude
+    # Chế độ project cố ý KHÔNG sửa config toàn máy — cài cho một dự án mà đi
+    # đổi settings của cả máy là sai. Nhưng phải nói ra hai thứ còn thiếu, không
+    # thì người dùng tưởng đã xong.
+    if [ -f "$CLAUDE_DIR/settings.json" ] && python3 -c "
+import json,sys
+c=json.load(open('$CLAUDE_DIR/settings.json'))
+sys.exit(0 if c.get('enabledPlugins',{}).get('superpowers@claude-plugins-official') else 1)
+" 2>/dev/null; then
+      echo "  ! Máy đang bật plugin superpowers ($CLAUDE_DIR/settings.json), mà dự án vừa" >&2
+      echo "    nhận bản superpowers trong repo — phiên sau mỗi skill sẽ hiện HAI lần." >&2
+      echo "    Tắt bằng /plugin, hoặc chạy '$0 --claude' để installer tắt hộ." >&2
+    fi
+    if ! python3 -c "
+import json,sys,os
+p=os.path.expanduser('$CLAUDE_DIR/.claude.json')
+sys.exit(0 if os.path.exists(p) and 'playwright' in json.load(open(p)).get('mcpServers',{}) else 1)
+" 2>/dev/null; then
+      echo "  ! Máy chưa khai MCP playwright, nên skill verifying-ui-with-playwright sẽ không" >&2
+      echo "    có công cụ browser_* nào để gọi. Chạy '$0 --claude' để khai (cấp máy)." >&2
+    fi
   else
     echo "  skills -> bỏ qua (--rules-only)"
   fi
