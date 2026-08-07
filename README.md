@@ -162,7 +162,7 @@ Nằm trong `shared/skills/` chứ không cài dưới dạng plugin, vì mục 
 
 - Tiền tố `superpowers:` trong các tham chiếu chéo giữa skill đã bị bỏ — cài dạng skill thường thì tên là `writing-plans`, không phải `superpowers:writing-plans`.
 - Plugin `superpowers@claude-plugins-official` bị installer **tắt** trong `settings.json`, nếu không mỗi skill sẽ hiện hai lần.
-- Mất hook `SessionStart` của plugin (thứ nhồi sẵn `using-superpowers` vào đầu mỗi phiên). Thay vào đó `CLAUDE.md` / `AGENTS.md` có mục `# superpowers` liệt kê skill và chỉ khi nào dùng cái nào — rules cũng được nạp mỗi phiên nên tác dụng tương đương.
+- Mất hook `SessionStart` của plugin (thứ nhồi sẵn `using-superpowers` vào đầu mỗi phiên). Thay vào đó `CLAUDE.md` / `AGENTS.md` có mục `# superpowers` đẩy agent chủ động đọc `using-superpowers` khi việc nhiều bước — rules cũng được nạp mỗi phiên nên tác dụng tương đương.
 - Không tự cập nhật theo marketplace. Lên bản mới: copy lại `skills/` từ upstream vào `shared/skills/` rồi `sed -i 's/superpowers://g'`.
 
 ## Chạy lại
