@@ -1,49 +1,70 @@
 #!/usr/bin/env bash
-# claude-kit installer — cài rules + skills vào Claude Code.
+# dotagents — cài rules + skills dùng chung cho các coding agent.
 #
-#   ./install.sh                    # global: áp cho MỌI dự án trên máy này
-#   ./install.sh --project [DIR]    # per-project: nhét vào repo dự án (mặc định: thư mục hiện tại)
-#   ./install.sh --project DIR --rules-only   # chỉ rules, không copy skills
+#   ./install.sh                     # global, cài cho mọi agent phát hiện được
+#   ./install.sh --claude            # chỉ Claude Code  -> $CLAUDE_CONFIG_DIR (mặc định ~/.claude)
+#   ./install.sh --codex             # chỉ Codex        -> $CODEX_HOME (mặc định ~/.codex)
+#   ./install.sh --project [DIR]     # nhét vào repo dự án (mặc định: thư mục hiện tại)
+#   ./install.sh --project DIR --rules-only    # chỉ rules, không copy skills
 #
 # Chạy lại nhiều lần vô hại: rules nằm trong khối đánh dấu, skills bị ghi đè.
 
 set -euo pipefail
 
 KIT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-BEGIN_MARK="<!-- claude-kit:begin — KHÔNG sửa tay, chạy lại install.sh để cập nhật -->"
-END_MARK="<!-- claude-kit:end -->"
+BEGIN_MARK="<!-- dotagents:begin — KHÔNG sửa tay, chạy lại install.sh để cập nhật -->"
+END_MARK="<!-- dotagents:end -->"
 
 MODE=global
 TARGET=""
 RULES_ONLY=0
+WANT_CLAUDE=0
+WANT_CODEX=0
 
 while [ $# -gt 0 ]; do
   case "$1" in
-    --global)     MODE=global ;;
+    --claude)     WANT_CLAUDE=1 ;;
+    --codex)      WANT_CODEX=1 ;;
+    --all)        WANT_CLAUDE=1; WANT_CODEX=1 ;;
     --project)    MODE=project
                   if [ $# -gt 1 ] && [ "${2#-}" = "$2" ]; then TARGET="$2"; shift; fi ;;
     --rules-only) RULES_ONLY=1 ;;
-    -h|--help)    sed -n '2,10p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    -h|--help)    sed -n '2,11p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) echo "Tham số lạ: $1" >&2; exit 2 ;;
   esac
   shift
 done
 
-# Ghép khối rules vào file CLAUDE.md, thay thế khối cũ nếu đã có.
+CLAUDE_DIR="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
+CODEX_DIR="${CODEX_HOME:-$HOME/.codex}"
+
+# Không chỉ định agent nào -> tự phát hiện theo thư mục config đã tồn tại.
+if [ "$MODE" = global ] && [ "$WANT_CLAUDE" = 0 ] && [ "$WANT_CODEX" = 0 ]; then
+  [ -d "$CLAUDE_DIR" ] && WANT_CLAUDE=1
+  [ -d "$CODEX_DIR" ]  && WANT_CODEX=1
+  if [ "$WANT_CLAUDE" = 0 ] && [ "$WANT_CODEX" = 0 ]; then
+    echo "Không thấy $CLAUDE_DIR lẫn $CODEX_DIR." >&2
+    echo "Chỉ định rõ bằng --claude hoặc --codex." >&2
+    exit 1
+  fi
+fi
+
+# Ghép khối rules vào file đích, thay thế khối cũ nếu đã có.
+# $1 = file đích, $2 = file rules nguồn
 merge_rules() {
-  local dest="$1" tmp
+  local dest="$1" src="$2" tmp
   tmp="$(mktemp)"
   if [ -f "$dest" ] && grep -qF "$BEGIN_MARK" "$dest"; then
     # Giữ nguyên phần người dùng tự viết ngoài khối.
     awk -v b="$BEGIN_MARK" -v e="$END_MARK" '
       index($0,b){skip=1} !skip{print} index($0,e){skip=0}' "$dest" > "$tmp"
-  elif [ -f "$dest" ]; then
+  elif [ -f "$dest" ] && [ -s "$dest" ]; then
     cat "$dest" > "$tmp"
     printf '\n' >> "$tmp"
   fi
   {
     printf '%s\n' "$BEGIN_MARK"
-    cat "$KIT_DIR/CLAUDE.md"
+    cat "$src"
     printf '%s\n' "$END_MARK"
   } >> "$tmp"
   mv "$tmp" "$dest"
@@ -53,8 +74,12 @@ merge_rules() {
 copy_skills() {
   local dest="$1"
   mkdir -p "$dest"
-  cp -R "$KIT_DIR/skills/." "$dest/"
-  echo "  skills -> $dest ($(ls -1 "$dest" | wc -l | tr -d ' ') skill)"
+  cp -R "$KIT_DIR/shared/skills/." "$dest/"
+  echo "  skills -> $dest ($(ls -1 "$KIT_DIR/shared/skills" | wc -l | tr -d ' ') skill)"
+}
+
+backup() {
+  [ -f "$1" ] && [ -s "$1" ] && cp "$1" "$1.bak.$(date +%Y%m%d%H%M%S)" || true
 }
 
 # Bật plugin superpowers trong settings.json mà không đụng các key khác.
@@ -66,8 +91,8 @@ import json, sys
 p = sys.argv[1]
 try:
     with open(p) as f: cfg = json.load(f)
-except (ValueError, FileNotFoundError):
-    print("  settings.json hỏng hoặc trống — bỏ qua, hãy bật plugin bằng /plugin", file=sys.stderr)
+except ValueError:
+    print("  settings.json hỏng — bỏ qua, hãy bật plugin bằng /plugin", file=sys.stderr)
     sys.exit(0)
 cfg.setdefault("enabledPlugins", {})["superpowers@claude-plugins-official"] = True
 with open(p, "w") as f: json.dump(cfg, f, indent=2, ensure_ascii=False)
@@ -75,26 +100,35 @@ print("  plugin -> superpowers bật trong " + p)
 PY
 }
 
-if [ "$MODE" = global ]; then
-  CFG="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
-  mkdir -p "$CFG"
-  echo "Cài GLOBAL vào $CFG"
-  [ -f "$CFG/CLAUDE.md" ] && cp "$CFG/CLAUDE.md" "$CFG/CLAUDE.md.bak.$(date +%Y%m%d%H%M%S)"
-  merge_rules "$CFG/CLAUDE.md"
-  copy_skills "$CFG/skills"
-  enable_plugins "$CFG/settings.json"
-else
+if [ "$MODE" = project ]; then
   TARGET="${TARGET:-$PWD}"
   [ -d "$TARGET" ] || { echo "Không thấy thư mục: $TARGET" >&2; exit 1; }
   TARGET="$(cd "$TARGET" && pwd)"
   echo "Cài PER-PROJECT vào $TARGET"
-  merge_rules "$TARGET/CLAUDE.md"
+  merge_rules "$TARGET/CLAUDE.md" "$KIT_DIR/claude/CLAUDE.md"
+  merge_rules "$TARGET/AGENTS.md" "$KIT_DIR/codex/AGENTS.md"
   if [ "$RULES_ONLY" = 0 ]; then
     copy_skills "$TARGET/.claude/skills"
   else
     echo "  skills -> bỏ qua (--rules-only)"
   fi
+else
+  if [ "$WANT_CLAUDE" = 1 ]; then
+    echo "Cài CLAUDE CODE vào $CLAUDE_DIR"
+    mkdir -p "$CLAUDE_DIR"
+    backup "$CLAUDE_DIR/CLAUDE.md"
+    merge_rules "$CLAUDE_DIR/CLAUDE.md" "$KIT_DIR/claude/CLAUDE.md"
+    copy_skills "$CLAUDE_DIR/skills"
+    enable_plugins "$CLAUDE_DIR/settings.json"
+  fi
+  if [ "$WANT_CODEX" = 1 ]; then
+    echo "Cài CODEX vào $CODEX_DIR"
+    mkdir -p "$CODEX_DIR"
+    backup "$CODEX_DIR/AGENTS.md"
+    merge_rules "$CODEX_DIR/AGENTS.md" "$KIT_DIR/codex/AGENTS.md"
+    copy_skills "$CODEX_DIR/skills"
+  fi
 fi
 
 echo
-echo "Xong. Khởi động lại phiên Claude Code để nạp rules mới."
+echo "Xong. Khởi động lại phiên agent để nạp rules mới."
