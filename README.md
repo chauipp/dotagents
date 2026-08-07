@@ -47,13 +47,19 @@ Không muốn ~500 KB skills nằm trong repo dự án:
 ## Cấu trúc
 
 ```
-shared/skills/     14 skill, dùng chung cho mọi agent
-claude/CLAUDE.md   rules bản Claude Code
-codex/AGENTS.md    rules bản Codex
+shared/skills/         13 skill giống nhau ở mọi agent
+claude/CLAUDE.md       rules bản Claude Code
+claude/skills/         skill có biến thể riêng cho Claude Code
+codex/AGENTS.md        rules bản Codex
+codex/skills/          skill có biến thể riêng cho Codex
 install.sh
 ```
 
-Thêm agent mới sau này chỉ cần thêm một thư mục rules và một nhánh trong `install.sh`; `shared/skills/` giữ nguyên.
+Installer copy `shared/skills/` trước, rồi chồng `<agent>/skills/` lên đè. Hầu hết skill chỉ là văn bản nên dùng chung được; skill nào **gọi tool cụ thể** thì phải tách bản.
+
+Hiện chỉ `graphify` cần tách: bản Claude Code dispatch subagent bằng Agent tool (`subagent_type="general-purpose"`), bản Codex dùng `spawn_agent`/`wait_agent`/`close_agent` và cần `multi_agent = true` trong `~/.codex/config.toml`. Cài nhầm bản là skill hỏng, nên đừng gộp chúng vào `shared/`.
+
+Thêm agent mới sau này: thêm một thư mục `<agent>/` chứa file rules (+ `skills/` nếu cần bản riêng) và một nhánh trong `install.sh`.
 
 ## Có gì bên trong
 

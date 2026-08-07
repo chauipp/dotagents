@@ -71,11 +71,23 @@ merge_rules() {
   echo "  rules  -> $dest"
 }
 
+# Copy shared/skills/, rồi chồng <agent>/skills/ lên đè.
+# Một vài skill (graphify) có biến thể riêng cho từng agent vì gọi tool khác nhau:
+# Claude Code dùng Agent tool, Codex dùng spawn_agent — dùng nhầm bản là hỏng skill.
+# $1 = thư mục đích, $2 = tên agent (claude | codex)
 copy_skills() {
-  local dest="$1"
+  local dest="$1" agent="$2" name n=0
   mkdir -p "$dest"
-  cp -R "$KIT_DIR/shared/skills/." "$dest/"
-  echo "  skills -> $dest ($(ls -1 "$KIT_DIR/shared/skills" | wc -l | tr -d ' ') skill)"
+  for src in "$KIT_DIR"/shared/skills/*/ "$KIT_DIR/$agent"/skills/*/; do
+    [ -d "$src" ] || continue
+    name="$(basename "$src")"
+    # Xoá trước rồi mới copy: nếu đích đang là symlink, cp -R sẽ báo lỗi
+    # "cannot overwrite non-directory with directory" và làm script dừng giữa chừng.
+    rm -rf "$dest/$name"
+    cp -R "$src" "$dest/$name"
+    n=$((n + 1))
+  done
+  echo "  skills -> $dest ($n skill, bản $agent)"
 }
 
 backup() {
@@ -108,7 +120,7 @@ if [ "$MODE" = project ]; then
   merge_rules "$TARGET/CLAUDE.md" "$KIT_DIR/claude/CLAUDE.md"
   merge_rules "$TARGET/AGENTS.md" "$KIT_DIR/codex/AGENTS.md"
   if [ "$RULES_ONLY" = 0 ]; then
-    copy_skills "$TARGET/.claude/skills"
+    copy_skills "$TARGET/.claude/skills" claude
   else
     echo "  skills -> bỏ qua (--rules-only)"
   fi
@@ -118,7 +130,7 @@ else
     mkdir -p "$CLAUDE_DIR"
     backup "$CLAUDE_DIR/CLAUDE.md"
     merge_rules "$CLAUDE_DIR/CLAUDE.md" "$KIT_DIR/claude/CLAUDE.md"
-    copy_skills "$CLAUDE_DIR/skills"
+    copy_skills "$CLAUDE_DIR/skills" claude
     enable_plugins "$CLAUDE_DIR/settings.json"
   fi
   if [ "$WANT_CODEX" = 1 ]; then
@@ -126,7 +138,7 @@ else
     mkdir -p "$CODEX_DIR"
     backup "$CODEX_DIR/AGENTS.md"
     merge_rules "$CODEX_DIR/AGENTS.md" "$KIT_DIR/codex/AGENTS.md"
-    copy_skills "$CODEX_DIR/skills"
+    copy_skills "$CODEX_DIR/skills" codex
   fi
 fi
 
