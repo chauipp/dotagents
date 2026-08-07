@@ -27,6 +27,28 @@
 - Các skill này tham chiếu lẫn nhau bằng tên trần (`writing-plans`), không có tiền tố
   `superpowers:` — bản trong repo đã bỏ tiền tố đó vì không cài dưới dạng plugin.
 
+# Worktree cho mỗi task
+- **Đây là tuyên bố sẵn cho skill `using-git-worktrees` — nó được phép làm luôn, KHÔNG phải
+  hỏi xin phép nữa.**
+- Mặc định mọi task đều làm trong một worktree riêng. Xong và đúng rồi mới merge về nhánh chính,
+  qua skill `finishing-a-development-branch`.
+- Chỉ làm thẳng trên nhánh chính khi người dùng nói rõ, ví dụ "sửa thẳng trên main", "khỏi
+  worktree". Việc gấp hay việc nhỏ KHÔNG phải là lý do bỏ qua.
+- Đang ở sẵn trong một worktree rồi thì làm tiếp tại đó, đừng tạo worktree lồng nhau.
+
+# Kiểm UI trước khi báo xong
+- Task có đụng tới thứ người dùng nhìn thấy trên trình duyệt (component, trang, CSS, form,
+  luồng bấm) thì **bắt buộc** dùng skill `verifying-ui-with-playwright` trước khi nói là xong.
+- Test unit xanh không thay được việc mở trình duyệt xem tận mắt.
+- Không dựng được app thì nói thẳng là chưa kiểm được và nhờ người dùng xem giúp — không được
+  báo xong.
+
+# Ghi lại cách làm đúng
+- Làm xong một task VÀ đã kiểm chứng là đúng thì chạy skill `capturing-what-worked` để cân nhắc
+  ghi lại. Nó có cổng chặn riêng, hầu hết task sẽ không đáng ghi — cứ để nó tự quyết.
+- Chỉ đúng trong repo hiện tại → `docs/recipes/<slug>.md` của chính repo đó.
+  Đúng ở mọi dự án → skill trong `~/dotagents/shared/skills/` rồi chạy `~/dotagents/install.sh`.
+
 # Skill thiết kế (opt-in)
 - Các skill sau **chỉ chạy khi người dùng gọi đích danh**, không tự kích hoạt:
   - Frontend/UI: `taste-skill` (mặc định), `minimalist-skill`, `brutalist-skill`, `redesign-skill`
