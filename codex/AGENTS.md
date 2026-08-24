@@ -78,3 +78,21 @@
 - Viết dựa trên diff và commit, không chép mô tả trong plan — plan là dự định, summary là kết quả.
 - Lý do tách file: `ls docs/superpowers/summaries/` là thấy hết việc đã xong, khỏi mở từng plan
   dài hàng trăm dòng để dò; và mỗi summary dùng thẳng được làm mô tả PR hay changelog.
+
+# Quy tắc lưu conversation
+
+- Mỗi conversation độc lập phải có một folder riêng tại `conversation/<tên-conversation>/`, tính từ root của worktree đang làm việc.
+- `<tên-conversation>` là slug ngắn, dấu cách đổi thành `-`, ưu tiên chữ thường không dấu. Khi user tiếp tục cùng conversation, dùng lại đúng folder đó; không tạo folder mới.
+- Với mỗi cặp chat gồm một tin nhắn của user và câu trả lời tương ứng của agent, tạo một file riêng tại `conversation/<tên-conversation>/<YY-MM-DD_HH-mm-ss>.md`.
+- Mỗi file chỉ được chứa hai phần: nguyên văn đầy đủ câu hỏi/yêu cầu của user và nguyên văn đầy đủ câu trả lời của agent. Không tóm tắt, rút gọn, diễn giải lại hoặc gộp nhiều cặp chat vào một file.
+- Không ghi metadata, branch, danh sách file, kết quả kiểm tra, log công cụ, chain-of-thought/nội suy nội bộ, lời chào riêng, hoặc nội dung ngoài câu hỏi và câu trả lời. Không ghi secrets, token, API key, password, cookie hay dữ liệu nhạy cảm; nếu xuất hiện trong nội dung cần lưu thì thay bằng `[REDACTED]`.
+- Tên file dùng mốc thời gian lúc cặp chat được ghi, định dạng `YY-MM-DD_HH-mm-ss.md`. Nếu hai cặp chat có cùng giây, thêm hậu tố ngắn để tránh ghi đè.
+- Ghi file sau mỗi câu trả lời của agent. Nếu context bị compact hoặc thiếu, chỉ lưu phần thực sự nhìn thấy; không được bịa hoặc khôi phục phần không còn trong context.
+- Nếu user yêu cầu không lưu conversation, tôn trọng yêu cầu đó. Không thêm `conversation/` vào `.gitignore`.
+
+# Quy tắc dọn conversation
+
+- Khi user gõ `dọn conversation`, `clear chat` hoặc `clear conversation` (không phân biệt hoa/thường), duyệt toàn bộ file chat trong `conversation/` của worktree đang làm việc rồi dọn chúng.
+- Giữ lại mọi cặp chat có ích cho việc thực hiện task hoặc luồng làm việc: yêu cầu, tiêu chí nghiệm thu, quyết định, bối cảnh, thiết kế, trạng thái/tiến độ, lỗi, blocker, phản hồi hoặc chỉ dẫn thay đổi cách làm.
+- Xóa các cặp chat không còn mục đích hay ý nghĩa cho task/coding/luồng làm việc, như chào hỏi, xác nhận xã giao, lặp lại vô ích hoặc nội dung không liên quan. Nếu không chắc một chat có ích hay không, phải giữ lại.
+- Không tạo file conversation cho tin nhắn kích hoạt dọn, các cập nhật trong lúc dọn, hoặc câu trả lời kết quả dọn. Quy tắc này là ngoại lệ của yêu cầu ghi file sau mỗi câu trả lời.
