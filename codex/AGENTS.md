@@ -33,14 +33,14 @@
   ghi lại. Nó có cổng chặn riêng, hầu hết task sẽ không đáng ghi — cứ để nó tự quyết.
 - Ba chỗ ghi, `capturing-what-worked` có cây quyết định đầy đủ:
   - Đúng ở mọi dự án → `~/dotagents/shared/skills/` rồi chạy `~/dotagents/install.sh`
-  - Quy trình riêng của dự án này → `<dự án>/.claude/skills/<tên>/SKILL.md`
+  - Quy trình riêng của dự án này → `<dự án>/.claude/skills/<tên>/SKILL.md` (Claude) hoặc `<dự án>/.codex/skills/<tên>/SKILL.md` (Codex)
   - Kiến thức riêng của dự án này → `<dự án>/docs/recipes/<slug>.md`
 - Viết skill mà cần chặt chẽ (loại luật agent hay lách) thì dùng skill `writing-skills` — nó bắt
   chạy subagent thử trước để xem agent lách bằng cớ gì. Chỉ là tài liệu hướng dẫn thì viết thẳng.
 
 # Không commit skill của bộ kit vào repo dự án
-- `.claude/skills/` trong một dự án chứa hai loại: skill do `~/dotagents/install.sh --project`
-  cài (bản sao của bộ kit) và skill viết riêng cho dự án. **Chỉ loại thứ hai được commit.**
+- `.claude/skills/` và `.codex/skills/` trong dự án chứa bản sao kit do `~/dotagents/install.sh --project` cài, cùng các skill viết riêng cho dự án.
+  **Chỉ skill viết riêng cho dự án mới được commit.**
 - Installer tự ghi khối `# dotagents:begin skills` vào `.gitignore` liệt kê đích danh skill của
   kit. Đừng xoá khối đó, cũng đừng `git add -f` những đường dẫn nằm trong đó.
 - Máy khác thiếu skill thì chạy `~/dotagents/install.sh --project`, chứ không phải lấy từ repo

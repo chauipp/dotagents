@@ -136,9 +136,9 @@ copy_skills() {
 # đội clone về mới có. Nên liệt kê đích danh từng tên trong manifest, và ghi lại
 # cả khối mỗi lần cài để danh sách không bị cũ.
 ignore_kit_skills() {
-  local target="$1" gi="$1/.gitignore" manifest="$1/.claude/skills/.dotagents-manifest"
+  local target="$1" gi="$1/.gitignore" manifest="$1/.claude/skills/.dotagents-manifest" codex_manifest="$1/.codex/skills/.dotagents-manifest"
   local b="# dotagents:begin skills" e="# dotagents:end skills" tmp
-  [ -f "$manifest" ] || return 0
+  [ -f "$manifest" ] || [ -f "$codex_manifest" ] || return 0
   tmp="$(mktemp)"
   if [ -f "$gi" ]; then
     awk -v b="$b" -v e="$e" '$0==b{s=1} !s{print} $0==e{s=0}' "$gi" > "$tmp"
@@ -152,10 +152,16 @@ ignore_kit_skills() {
       [ -n "$name" ] && printf '.claude/skills/%s/\n' "$name"
     done < "$manifest"
     printf '.claude/skills/.dotagents-manifest\n'
+    if [ -f "$codex_manifest" ]; then
+      while IFS= read -r name; do
+        [ -n "$name" ] && printf '.codex/skills/%s/\n' "$name"
+      done < "$codex_manifest"
+      printf '.codex/skills/.dotagents-manifest\n'
+    fi
     printf '%s\n' "$e"
   } >> "$tmp"
   mv "$tmp" "$gi"
-  echo "  ignore -> $(wc -l < "$manifest" | tr -d ' ') skill của kit thêm vào .gitignore"
+  echo "  ignore -> skill của kit thêm vào .gitignore"
 }
 
 # Giữ 3 bản gần nhất. Rules nằm trong marker nên các bản backup gần như trùng
@@ -224,8 +230,9 @@ tune_codex_config() {
     echo "  config -> [features] multi_agent = true"
     added=1
   elif ! grep -q 'multi_agent' "$f"; then
-    echo "  ! $f đã có [features] nhưng chưa có multi_agent — tự thêm giúp:" >&2
-    echo "    multi_agent = true   (cần cho subagent-driven-development, graphify)" >&2
+    sed -i '/^\[features\]$/a multi_agent = true' "$f"
+    echo "  config -> multi_agent = true thêm vào [features]"
+    added=1
   fi
   if ! grep -q '^\[mcp_servers\.playwright\]' "$f"; then
     printf '\n[mcp_servers.playwright]\ncommand = "npx"\nargs = ["@playwright/mcp@latest"]\n' >> "$f"
@@ -245,6 +252,7 @@ if [ "$MODE" = project ]; then
   merge_rules "$TARGET/AGENTS.md" "$KIT_DIR/codex/AGENTS.md"
   if [ "$RULES_ONLY" = 0 ]; then
     copy_skills "$TARGET/.claude/skills" claude
+    copy_skills "$TARGET/.codex/skills" codex
     [ -d "$TARGET/.git" ] && ignore_kit_skills "$TARGET"
     # Chế độ project cố ý KHÔNG sửa config toàn máy — cài cho một dự án mà đi
     # đổi settings của cả máy là sai. Nhưng phải nói ra hai thứ còn thiếu, không
