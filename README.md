@@ -71,7 +71,7 @@ done
 Chỉ liệt kê thư mục có `.dotagents-manifest`, tức thư mục thật sự do dotagents cài — thư mục
 config của account khác trên cùng máy không lọt vào.
 
-Mỗi thư mục phải ra **22 skill và đúng 1 khối rules**. Ra 2 khối là file đang chứa rules hai lần —
+Mỗi thư mục phải ra **23 skill và đúng 1 khối rules**. Ra 2 khối là file đang chứa rules hai lần —
 xem mục [Lần đầu chạy trên máy đã có sẵn CLAUDE.md](#lần-đầu-chạy-trên-máy-đã-có-sẵn-claudemd).
 Không ra dòng nào là bước 1 chưa chạy được.
 
@@ -117,9 +117,9 @@ cd ~/duong/dan/du-an
 ~/dotagents/install.sh --project
 ```
 
-Ghi rules vào `CLAUDE.md` + `AGENTS.md`; cài 22 skill của Claude Code vào `.claude/skills/` và 22 skill đúng biến thể của Codex vào `.codex/skills/`.
+Ghi rules vào `CLAUDE.md` + `AGENTS.md`; cài 23 skill của Claude Code vào `.claude/skills/` và 23 skill đúng biến thể của Codex vào `.codex/skills/`.
 
-**Skills không đi vào git.** Installer ghi một khối vào `.gitignore` liệt kê đích danh cả hai bộ 22 skill, nên `git add -A` không kéo bản sao kit theo. Đồng đội chỉ cần chạy `install.sh --project` để có cùng bộ skill.
+**Skills không đi vào git.** Installer ghi một khối vào `.gitignore` liệt kê đích danh cả hai bộ 23 skill, nên `git add -A` không kéo bản sao kit theo. Đồng đội chỉ cần chạy `install.sh --project` để có cùng bộ skill.
 
 Khối đó chỉ chặn tên skill của kit trong `.claude/skills/` và `.codex/skills/`. Skill bạn tự viết cho dự án (ví dụ `.claude/skills/deploy-staging/`) vẫn commit bình thường.
 
@@ -132,7 +132,7 @@ Chỉ muốn rules, khỏi cần thư mục skills trong dự án:
 ## Cấu trúc
 
 ```
-shared/skills/         21 skill giống nhau ở mọi agent (5 thiết kế + 14 superpowers + 2 tự viết)
+shared/skills/         22 skill giống nhau ở mọi agent (5 thiết kế + 14 superpowers + 3 tự viết)
 claude/CLAUDE.md       rules bản Claude Code
 claude/skills/         skill riêng cho Claude Code (graphify)
 codex/AGENTS.md        rules bản Codex
@@ -151,10 +151,10 @@ Thêm agent mới sau này: thêm một thư mục `<agent>/` chứa file rules 
 
 **Rules** — luôn trả lời tiếng Việt, đẩy agent chủ động dùng superpowers, danh sách skill opt-in, mặc định mỗi task một worktree (tuyên bố sẵn để `using-git-worktrees` khỏi hỏi), bắt kiểm UI trước khi báo xong, quy tắc checkbox cho từng task trong plan, quy tắc viết summary khi plan hoàn tất kèm chuỗi trỏ nhau spec ↔ plan ↔ summary.
 
-**Skills** — 22 skill, trong đó 8 skill dưới đây:
+**Skills** — 23 skill, trong đó 9 skill dưới đây:
 
 - `graphify` — biến mọi input thành knowledge graph
-- Tự viết: `verifying-ui-with-playwright` (bắt kiểm UI bằng trình duyệt thật trước khi báo xong), `capturing-what-worked` (ghi lại cách làm đúng vào `docs/recipes/` để lần sau khỏi mò lại)
+- Tự viết: `verifying-ui-with-playwright` (bắt kiểm UI bằng trình duyệt thật trước khi báo xong), `capturing-what-worked` (ghi lại cách làm đúng vào `docs/recipes/` để lần sau khỏi mò lại), `compacting-conversations` (tóm tắt và thay thế an toàn các dải chat cũ liên tiếp)
 - Frontend/UI: `taste-skill`, `minimalist-skill`, `brutalist-skill`, `redesign-skill`
 - Khác: `output-skill`
 
