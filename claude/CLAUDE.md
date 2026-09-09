@@ -96,3 +96,9 @@
 - Giữ lại mọi cặp chat có ích cho việc thực hiện task hoặc luồng làm việc: yêu cầu, tiêu chí nghiệm thu, quyết định, bối cảnh, thiết kế, trạng thái/tiến độ, lỗi, blocker, phản hồi hoặc chỉ dẫn thay đổi cách làm.
 - Xóa các cặp chat không còn mục đích hay ý nghĩa cho task/coding/luồng làm việc, như chào hỏi, xác nhận xã giao, lặp lại vô ích hoặc nội dung không liên quan. Nếu không chắc một chat có ích hay không, phải giữ lại.
 - Không tạo file conversation cho tin nhắn kích hoạt dọn, các cập nhật trong lúc dọn, hoặc câu trả lời kết quả dọn. Quy tắc này là ngoại lệ của yêu cầu ghi file sau mỗi câu trả lời.
+
+# Quy tắc compact conversation
+
+- Khi user yêu cầu hành động compact conversation, dùng skill `compacting-conversations` trước khi sửa hay xóa file.
+- Compact thay thế một dải file conversation liên tiếp bằng một file compact; không gom các file rời rạc theo chủ đề.
+- File compact là ngoại lệ được user cho phép đối với quy tắc lưu nguyên văn. Không tạo log conversation riêng cho lệnh compact, cập nhật trong lúc làm hoặc kết quả compact.
