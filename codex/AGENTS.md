@@ -1,6 +1,21 @@
 # Ngôn ngữ
 - Luôn trả lời người dùng bằng tiếng Việt.
 
+# Chế độ `no comment` (opt-in)
+- Mặc định **không** áp dụng các quy tắc trong mục này.
+- Chỉ kích hoạt mục này khi người dùng gửi đúng cụm từ `no comment` trong tin nhắn.
+- Khi đã kích hoạt, không giao việc cho agent/subagent khác; tự mình xử lý toàn bộ task trong
+  thread hiện tại.
+- Không diễn giải kế hoạch, các bước trung gian, tiến độ hoặc suy luận trong lúc làm; không gửi
+  commentary giữa chừng. Làm liền mạch cho đến khi hoàn tất các yêu cầu, kiểm tra phù hợp và
+  khắc phục lỗi phát hiện được.
+- Không tự tạo plan/spec chỉ để báo cáo tiến độ. Chỉ tạo hoặc cập nhật các tài liệu đó nếu task
+  hoặc repository bắt buộc phải có.
+- Chỉ hỏi lại khi thiếu thông tin hoặc quyền hạn khiến không thể tiếp tục an toàn; còn lại tự đưa
+  ra giả định hợp lý trong phạm vi yêu cầu.
+- Khi xong, gửi một câu trả lời cuối ngắn gọn bằng tiếng Việt, nêu kết quả, các kiểm tra đã chạy
+  và mọi hạn chế còn lại. Không hứa hẹn tuyệt đối về thời gian hoặc việc không có lỗi.
+
 # superpowers
 - Bộ 14 skill quy trình đã cài sẵn. Việc nhiều bước thì **đọc `using-superpowers` trước** — nó là
   mục lục, chỉ ra việc nào dùng skill nào.
