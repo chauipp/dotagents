@@ -129,6 +129,37 @@ Chỉ muốn rules, khỏi cần thư mục skills trong dự án:
 ~/dotagents/install.sh --project --rules-only
 ```
 
+## Cài an toàn vào dự án đã có rules hoặc skills riêng
+
+Luôn kiểm tra trước khi cài:
+
+```bash
+~/dotagents/install.sh --check --project /đường/dẫn/tới/project
+~/dotagents/install.sh --project /đường/dẫn/tới/project
+```
+
+`--check` không tạo, sửa hay xóa file. Nếu skill kit trùng tên với một skill đã có nhưng tên đó không nằm trong `.dotagents-manifest`, installer báo collision và dừng trước khi sửa rules, skills hay `.gitignore`. Đổi tên/di chuyển skill riêng hoặc quyết định thủ công cách xử lý rồi mới chạy lại; installer không tự ghi đè collision.
+
+Skill kit đã có trong manifest được cập nhật bình thường. Skill riêng tên khác, rules nằm ngoài marker dotagents, và mọi rule `.gitignore` nằm ngoài block dotagents đều được giữ nguyên.
+
+**Prompt an toàn cho coding agent:**
+
+```text
+Đọc README của dotagents. Chạy install.sh --check --project <path> trước.
+Chỉ chạy lệnh cài thật khi không có skill collision. Nếu có collision, báo tên
+skill và dừng để tôi quyết định; không đổi tên, di chuyển hay ghi đè skill đó.
+```
+
+## Cập nhật an toàn
+
+```bash
+git -C ~/dotagents pull --ff-only
+~/dotagents/install.sh --check
+~/dotagents/install.sh
+```
+
+Với dự án cài per-project, thêm `--project /đường/dẫn/tới/project` vào cả hai lệnh. Chỉ skill có tên trong manifest của đúng thư mục đích mới được ghi đè hoặc xóa.
+
 ## Cấu trúc
 
 ```

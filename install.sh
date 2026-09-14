@@ -6,8 +6,10 @@
 #   ./install.sh --codex             # chỉ Codex        -> $CODEX_HOME (mặc định ~/.codex)
 #   ./install.sh --project [DIR]     # nhét vào repo dự án (mặc định: thư mục hiện tại)
 #   ./install.sh --project DIR --rules-only    # chỉ rules, không copy skills
+#   ./install.sh --check --project DIR         # kiểm tra an toàn, không ghi file
 #
-# Chạy lại nhiều lần vô hại: rules nằm trong khối đánh dấu, skills bị ghi đè.
+# Chạy lại nhiều lần vô hại: rules nằm trong khối đánh dấu, skills do dotagents
+# quản lý qua manifest mới được ghi đè hoặc xóa.
 
 set -euo pipefail
 
@@ -18,6 +20,7 @@ END_MARK="<!-- dotagents:end -->"
 MODE=global
 TARGET=""
 RULES_ONLY=0
+CHECK=0
 WANT_CLAUDE=0
 WANT_CODEX=0
 
@@ -29,6 +32,7 @@ while [ $# -gt 0 ]; do
     --project)    MODE=project
                   if [ $# -gt 1 ] && [ "${2#-}" = "$2" ]; then TARGET="$2"; shift; fi ;;
     --rules-only) RULES_ONLY=1 ;;
+    --check)      CHECK=1 ;;
     -h|--help)    sed -n '2,11p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) echo "Tham số lạ: $1" >&2; exit 2 ;;
   esac
@@ -86,6 +90,58 @@ merge_rules() {
 REMOVED_SKILLS="brandkit gpt-tasteskill image-to-code-skill imagegen-frontend-mobile
 imagegen-frontend-web soft-skill stitch-skill taste-skill-v1"
 
+# Chỉ manifest là bằng chứng dotagents sở hữu skill ở thư mục đích. Một skill
+# cùng tên nhưng ngoài manifest là tài sản dự án/người dùng, không được đụng vào.
+is_managed_skill() {
+  local manifest="$1" name="$2"
+  [ -f "$manifest" ] && grep -qxF "$name" "$manifest"
+}
+
+kit_skill_names() {
+  local agent="$1" src
+  for src in "$KIT_DIR"/shared/skills/*/ "$KIT_DIR/$agent"/skills/*/; do
+    [ -d "$src" ] && basename "$src"
+  done | sort -u
+}
+
+# Kiểm tra TẤT CẢ collision trước mutation. Hàm không mkdir, không copy, không
+# sửa manifest; caller phải chạy cho mọi đích trước merge_rules/copy_skills.
+preflight_skills() {
+  local dest="$1" agent="$2" manifest="$1/.dotagents-manifest" name failed=0
+  while IFS= read -r name; do
+    [ -n "$name" ] || continue
+    if { [ -e "$dest/$name" ] || [ -L "$dest/$name" ]; } \
+      && ! is_managed_skill "$manifest" "$name"; then
+      echo "  ! Collision: $dest/$name là skill có sẵn nhưng không thuộc manifest dotagents." >&2
+      failed=1
+    fi
+  done < <(kit_skill_names "$agent")
+  return "$failed"
+}
+
+preflight_targets() {
+  local failed=0
+  while [ "$#" -gt 0 ]; do
+    preflight_skills "$1" "$2" || failed=1
+    shift 2
+  done
+  if [ "$failed" = 1 ]; then
+    echo "Hủy cài đặt: đổi tên hoặc di chuyển skill riêng đang collision rồi chạy lại." >&2
+    return 1
+  fi
+}
+
+report_check() {
+  local scope="$1"
+  echo "Kiểm tra an toàn: $scope"
+  if [ "$RULES_ONLY" = 1 ]; then
+    echo "  rules  -> sẽ cập nhật khối dotagents; skills -> bỏ qua (--rules-only)"
+  else
+    echo "  rules  -> sẽ cập nhật khối dotagents"
+    echo "  skills -> không có collision; sẽ cập nhật các skill trong manifest"
+  fi
+}
+
 # Copy shared/skills/, rồi chồng <agent>/skills/ lên đè.
 # Một vài skill (graphify) có biến thể riêng cho từng agent vì gọi tool khác nhau:
 # Claude Code dùng Agent tool, Codex dùng spawn_agent — dùng nhầm bản là hỏng skill.
@@ -109,6 +165,7 @@ copy_skills() {
   # phải gọi thẳng tên ra đây. Chỉ thêm vào đây tên ĐÃ TỪNG nằm trong repo.
   for name in $REMOVED_SKILLS; do
     grep -qxF "$name" "$new" && continue
+    is_managed_skill "$manifest" "$name" || continue
     [ -e "$dest/$name" ] || continue
     rm -rf "$dest/$name"
     echo "  gỡ    -> $name (đã cắt khỏi bộ kit)"
@@ -247,6 +304,13 @@ if [ "$MODE" = project ]; then
   TARGET="${TARGET:-$PWD}"
   [ -d "$TARGET" ] || { echo "Không thấy thư mục: $TARGET" >&2; exit 1; }
   TARGET="$(cd "$TARGET" && pwd)"
+  if [ "$RULES_ONLY" = 0 ]; then
+    preflight_targets "$TARGET/.claude/skills" claude "$TARGET/.codex/skills" codex || exit 1
+  fi
+  if [ "$CHECK" = 1 ]; then
+    report_check "PER-PROJECT tại $TARGET"
+    exit 0
+  fi
   echo "Cài PER-PROJECT vào $TARGET"
   merge_rules "$TARGET/CLAUDE.md" "$KIT_DIR/claude/CLAUDE.md"
   merge_rules "$TARGET/AGENTS.md" "$KIT_DIR/codex/AGENTS.md"
@@ -278,6 +342,16 @@ sys.exit(0 if os.path.exists(p) and 'playwright' in json.load(open(p)).get('mcpS
     echo "  skills -> bỏ qua (--rules-only)"
   fi
 else
+  if [ "$RULES_ONLY" = 0 ]; then
+    targets=()
+    [ "$WANT_CLAUDE" = 1 ] && targets+=("$CLAUDE_DIR/skills" claude)
+    [ "$WANT_CODEX" = 1 ] && targets+=("$CODEX_DIR/skills" codex)
+    preflight_targets "${targets[@]}" || exit 1
+  fi
+  if [ "$CHECK" = 1 ]; then
+    report_check "GLOBAL"
+    exit 0
+  fi
   if [ "$WANT_CLAUDE" = 1 ]; then
     echo "Cài CLAUDE CODE vào $CLAUDE_DIR"
     mkdir -p "$CLAUDE_DIR"
