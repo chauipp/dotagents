@@ -44,6 +44,11 @@ grep -q 'dotagents:begin' "$project/CLAUDE.md" || fail 'Project install did not 
 grep -q 'dotagents:begin' "$project/AGENTS.md" || fail 'Project install did not write Codex rules'
 assert_skill_set claude "$project/.claude/skills"
 assert_skill_set codex "$project/.codex/skills"
+[ -f "$KIT_DIR/shared/skills/preserving-user-git-identity/SKILL.md" ] || fail "Missing shared Git identity skill"
+assert_file_equal "$KIT_DIR/shared/skills/preserving-user-git-identity/SKILL.md" "$project/.claude/skills/preserving-user-git-identity/SKILL.md"
+assert_file_equal "$KIT_DIR/shared/skills/preserving-user-git-identity/SKILL.md" "$project/.codex/skills/preserving-user-git-identity/SKILL.md"
+grep -q "preserving-user-git-identity" "$project/CLAUDE.md" || fail "Claude rules omit Git identity safeguard"
+grep -q "preserving-user-git-identity" "$project/AGENTS.md" || fail "Codex rules omit Git identity safeguard"
 grep -q '^\.claude/skills/graphify/$' "$project/.gitignore" || fail 'Claude kit skills are not ignored'
 grep -q '^\.codex/skills/graphify/$' "$project/.gitignore" || fail 'Codex kit skills are not ignored'
 mkdir -p "$project/.claude/skills/project-only" "$project/.codex/skills/project-only"

@@ -1,6 +1,12 @@
 # Ngôn ngữ
 - Luôn trả lời người dùng bằng tiếng Việt.
 
+# Bảo toàn danh tính Git
+- Trước mọi commit hoặc push, **bắt buộc** dùng skill `preserving-user-git-identity`.
+- Chỉ dùng `user.name` và `user.email` Git hiện tại; không tự đặt/sửa chúng, không dùng `--author`, tài khoản bot hay danh tính công cụ tự động.
+- Nếu thiếu một trong hai giá trị, dừng trước commit/push và yêu cầu người dùng cấu hình hoặc xác nhận.
+- Không thêm hoặc giữ attribution công cụ tự động trong code, commit message/template/trailer, PR, changelog hay metadata do mình tạo; vẫn giữ copyright, license và provenance đã có nếu người dùng không yêu cầu xóa.
+
 # superpowers
 - Bộ 14 skill quy trình đã cài sẵn. Việc nhiều bước thì **gọi Skill tool với `using-superpowers`
   trước** — nó là mục lục, chỉ ra việc nào dùng skill nào.

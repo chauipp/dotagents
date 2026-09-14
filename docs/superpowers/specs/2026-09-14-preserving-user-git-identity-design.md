@@ -35,3 +35,7 @@ Skill chỉ yêu cầu bỏ attribution do agent tự tạo; không được xó
 - Không thay đổi Git config toàn cục/cục bộ của người dùng.
 - Không tự push hay thay đổi lịch sử commit hiện có.
 - Không làm sạch nội dung attribution đã tồn tại nếu người dùng không yêu cầu.
+
+## Plan thực thi
+
+Xem [plan thực thi](../plans/2026-09-14-preserving-user-git-identity.md).
