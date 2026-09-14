@@ -9,7 +9,11 @@
 
 # Chế độ `no comment` (opt-in)
 - Mặc định **không** áp dụng các quy tắc trong mục này.
-- Chỉ kích hoạt mục này khi người dùng gửi đúng cụm từ `no comment` trong tin nhắn.
+- Chỉ kích hoạt cho **lượt xử lý hiện tại** khi dòng không trống đầu tiên trong tin nhắn của người
+  dùng là chính xác `no comment`. Viết yêu cầu ở các dòng sau.
+- Chỉ nhắc, trích dẫn hoặc đặt câu hỏi về cụm từ `no comment` không kích hoạt chế độ này.
+- Chế độ này không được kế thừa sang bất kỳ lượt sau nào; mỗi lượt muốn dùng phải gửi lại trigger
+  theo đúng cú pháp trên.
 - Khi đã kích hoạt, không giao việc cho agent/subagent khác; tự mình xử lý toàn bộ task trong
   thread hiện tại.
 - Không diễn giải kế hoạch, các bước trung gian, tiến độ hoặc suy luận trong lúc làm; không gửi
