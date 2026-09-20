@@ -1,0 +1,7 @@
+interface:
+  display_name: "No clarify"
+  short_description: "Execute directly without explanatory commentary"
+  default_prompt: "Use $no-clarify to execute this request directly without explanatory commentary."
+
+policy:
+  allow_implicit_invocation: false
