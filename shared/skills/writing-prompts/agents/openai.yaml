@@ -1,4 +1,0 @@
-interface:
-  display_name: "Writing Prompts"
-  short_description: "Viết prompt rõ yêu cầu, dùng được cho agent khác"
-  default_prompt: "Dùng $writing-prompts để biến yêu cầu của tôi thành một prompt hoàn chỉnh cho agent khác."

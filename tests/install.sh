@@ -102,4 +102,20 @@ grep -q 'brainstorming' "$TMP_DIR/global-collision-output" || fail 'Global colli
 grep -qx 'global skill' "$global_claude/skills/brainstorming/SKILL.md" \
   || fail 'Global collision changed the custom skill'
 
+# Map-prompt profiles are opt-in project-local packages, never global kit skills.
+for name in writing-prompts writing-prompts-map-sol writing-prompts-map-astra; do
+  [ ! -e "$TMP_DIR/codex-config/skills/$name" ] || fail "Map prompt skill leaked into global install: $name"
+done
+for name in writing-prompts-map-sol writing-prompts-map-astra; do
+  [ -f "$KIT_DIR/local/skills/$name/SKILL.md" ] || fail "Missing local profile: $name"
+  cp -R "$KIT_DIR/local/skills/$name" "$project/.codex/skills/$name"
+done
+"$KIT_DIR/install.sh" --project "$project" >/dev/null
+for name in writing-prompts-map-sol writing-prompts-map-astra; do
+  assert_file_equal "$KIT_DIR/local/skills/$name/SKILL.md" "$project/.codex/skills/$name/SKILL.md"
+  if grep -qxF "$name" "$project/.codex/skills/.dotagents-manifest"; then fail "Local profile incorrectly claimed by global kit: $name"; fi
+done
+cmp "$KIT_DIR/local/skills/writing-prompts-map-sol/references/workflow.md" "$KIT_DIR/local/skills/writing-prompts-map-astra/references/workflow.md" || fail 'Profile workflow drift'
+cmp "$KIT_DIR/local/skills/writing-prompts-map-sol/references/roles.md" "$KIT_DIR/local/skills/writing-prompts-map-astra/references/roles.md" || fail 'Profile role drift'
+
 echo 'PASS: installer preserves custom skills, detects collisions, and supports dry-run checks'

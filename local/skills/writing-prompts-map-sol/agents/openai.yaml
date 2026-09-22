@@ -1,0 +1,6 @@
+interface:
+  display_name: "Writing Prompts Map — Sol"
+  short_description: "Viết prompt map chi tiết với bộ model Sol"
+  default_prompt: "Dùng $writing-prompts-map-sol để viết prompt dựng map đầy đủ công năng, nội thất và tiêu chí nghiệm thu từ yêu cầu của tôi."
+policy:
+  allow_implicit_invocation: false
