@@ -26,3 +26,7 @@ Engine map theo spatial specification chi tiết.
 `install.sh` đưa skill mới vào cả bộ cài Codex lẫn Claude; người dùng có thể gọi
 `$map-subagent-workflow` hoặc agent tự chọn skill này khi task khớp description.
 Các yêu cầu model và quality gate bên trong skill được giữ nguyên.
+
+## Plan thực thi
+
+`../plans/2026-09-23-map-subagent-workflow.md`
