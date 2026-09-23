@@ -1,5 +1,5 @@
-Spec: `../specs/2026-09-23-map-subagent-workflow-design.md`
-Plan: `../plans/2026-09-23-map-subagent-workflow.md`
+Spec: [2026-09-23-map-subagent-workflow-design.md](../specs/2026-09-23-map-subagent-workflow-design.md)
+Plan: [2026-09-23-map-subagent-workflow.md](../plans/2026-09-23-map-subagent-workflow.md)
 
 # Summary: Map Subagent Workflow
 
