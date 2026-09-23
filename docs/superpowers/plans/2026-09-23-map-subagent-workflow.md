@@ -32,7 +32,7 @@
 - [x] **Step 1: Copy the source skill unchanged** to `shared/skills/map-subagent-workflow/SKILL.md`.
 - [x] **Step 2: Update README counts and skill list** from 26 to 27 shared skills, 27 to 28 total skills, and 12 to 13 highlighted skills; include the Unreal map workflow in the self-written skills list.
 - [x] **Step 3: Verify the copied file matches its source** using SHA-256 comparison, confirm the shared directory count and README figures agree, and inspect the final diff. Do not run the test suite unless requested.
-- [ ] **Step 4: Tick this task and every completed step; write the required four-section summary.**
+- [x] **Step 4: Write the required four-section summary and keep all completed steps ticked; tick the task heading after its review passes.**
 
 ## Kết quả
 
