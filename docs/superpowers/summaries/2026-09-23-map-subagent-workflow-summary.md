@@ -8,7 +8,7 @@ Plan: [2026-09-23-map-subagent-workflow.md](../plans/2026-09-23-map-subagent-wor
 - Thêm `map-subagent-workflow` vào bộ skill shared, giữ nguyên file nguồn.
 - Installer sẽ đưa skill mới vào các bộ cài Codex và Claude khi chạy lại.
 - Cập nhật README: 27 skill shared, 28 skill tổng cộng và danh sách skill nổi bật có thêm workflow Unreal.
-- Đối chiếu SHA-256 nguồn/bản chép và số lượng thư mục shared; các số README khớp.
+- Đối chiếu SHA-256 sau khi chuẩn hóa line ending về LF; nguồn và bản trong repo khớp nội dung. Đếm 27 thư mục shared và xác nhận số README khớp.
 
 ## File chính
 
@@ -23,5 +23,5 @@ Plan: [2026-09-23-map-subagent-workflow.md](../plans/2026-09-23-map-subagent-wor
 
 ## Còn dở / cần lưu ý
 
-- Chưa chạy test suite theo plan; đã kiểm tra hash file nguồn/bản chép, số thư mục shared và các con số README.
+- Chưa chạy test suite theo plan; đã kiểm tra hash nội dung sau chuẩn hóa line ending, số thư mục shared và các con số README.
 - Ma trận model trong skill giữ nguyên theo file nguồn. Nếu runtime không hỗ trợ một cặp model/reasoning được yêu cầu, skill hướng dẫn dừng và báo lỗi.
