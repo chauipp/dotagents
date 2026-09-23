@@ -163,6 +163,7 @@ Với dự án cài per-project, thêm `--project /đường/dẫn/tới/project
 ## Cấu trúc
 
 ```
+local/skills/          2 skill viết prompt map, chỉ cài local theo hướng dẫn local/README.md
 shared/skills/         27 skill giống nhau ở mọi agent (5 thiết kế + 14 superpowers + 8 tự viết)
 claude/CLAUDE.md       rules bản Claude Code
 claude/skills/         skill riêng cho Claude Code (graphify)
@@ -203,6 +204,24 @@ Nằm trong `shared/skills/` chứ không cài dưới dạng plugin, vì mục 
 - Plugin `superpowers@claude-plugins-official` bị installer **tắt** trong `settings.json`, nếu không mỗi skill sẽ hiện hai lần.
 - Mất hook `SessionStart` của plugin (thứ nhồi sẵn `using-superpowers` vào đầu mỗi phiên). Thay vào đó `CLAUDE.md` / `AGENTS.md` có mục `# superpowers` đẩy agent chủ động đọc `using-superpowers` khi việc nhiều bước — rules cũng được nạp mỗi phiên nên tác dụng tương đương.
 - Không tự cập nhật theo marketplace. Lên bản mới: copy lại `skills/` từ upstream vào `shared/skills/` rồi `sed -i 's/superpowers://g'`.
+
+## Gọi skill viết prompt map (chỉ local)
+
+Hai skill thay thế `writing-prompts` nằm ở `local/skills/`, ngoài bộ 28 skill của installer. Chúng có cùng hợp đồng vai trò và tiêu chí chất lượng, chỉ khác model. `install.sh` global hoặc project đều không tự cài hai profile này; xem [cách cài local](local/README.md).
+
+Chọn parent **Sol xhigh**, rồi gọi:
+
+```text
+$writing-prompts-map-sol Dựa vào description và nguồn map, viết prompt hoàn thiện khu được giao đủ công năng, nội thất và tiêu chí nghiệm thu.
+```
+
+Hoặc chọn parent **Astra xhigh**, rồi gọi:
+
+```text
+$writing-prompts-map-astra Dựa vào description và nguồn map, viết prompt hoàn thiện khu được giao đủ công năng, nội thất và tiêu chí nghiệm thu.
+```
+
+Skill chỉ viết prompt cho map; không dựng map hoặc viết prompt lĩnh vực khác. Metadata opt-in giúp user tự chọn profile. Skill không tự đổi model parent; thiếu model/công cụ phải báo đúng giới hạn. Bản Sol không gọi Astra, kể cả fallback. Không dùng max/ultra mặc định.
 
 ## Chạy lại
 
