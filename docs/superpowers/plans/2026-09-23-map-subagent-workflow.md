@@ -17,7 +17,7 @@
 
 ---
 
-- [ ] Task 1: Add the map subagent workflow as a shared skill
+- [x] Task 1: Add the map subagent workflow as a shared skill
 
 **Files:**
 - Create: `shared/skills/map-subagent-workflow/SKILL.md`
