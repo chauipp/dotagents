@@ -36,4 +36,4 @@ Không thay đổi cấu trúc skill, nội dung rules, hành vi cài global, ha
 
 ## Plan thực thi
 
-Chưa tạo; sẽ liên kết tới `../plans/2026-09-23-project-agent-selection.md` sau khi plan được viết.
+`../plans/2026-09-23-project-agent-selection.md`

@@ -4,9 +4,11 @@
 #   ./install.sh                     # global, cài cho mọi agent phát hiện được
 #   ./install.sh --claude            # chỉ Claude Code  -> $CLAUDE_CONFIG_DIR (mặc định ~/.claude)
 #   ./install.sh --codex             # chỉ Codex        -> $CODEX_HOME (mặc định ~/.codex)
-#   ./install.sh --project [DIR]     # nhét vào repo dự án (mặc định: thư mục hiện tại)
-#   ./install.sh --project DIR --rules-only    # chỉ rules, không copy skills
-#   ./install.sh --check --project DIR         # kiểm tra an toàn, không ghi file
+#   ./install.sh --project [DIR]     # cả Claude Code và Codex (mặc định: thư mục hiện tại)
+#   ./install.sh --project DIR --claude       # chỉ Claude Code trong project
+#   ./install.sh --project DIR --codex        # chỉ Codex trong project
+#   ./install.sh --project DIR --rules-only   # chỉ rules, không copy skills
+#   ./install.sh --check --project DIR        # kiểm tra an toàn, không ghi file
 #
 # Chạy lại nhiều lần vô hại: rules nằm trong khối đánh dấu, skills do dotagents
 # quản lý qua manifest mới được ghi đè hoặc xóa.
@@ -304,39 +306,54 @@ if [ "$MODE" = project ]; then
   TARGET="${TARGET:-$PWD}"
   [ -d "$TARGET" ] || { echo "Không thấy thư mục: $TARGET" >&2; exit 1; }
   TARGET="$(cd "$TARGET" && pwd)"
-  if [ "$RULES_ONLY" = 0 ]; then
-    preflight_targets "$TARGET/.claude/skills" claude "$TARGET/.codex/skills" codex || exit 1
+  # Project không chọn agent thì giữ hành vi cũ: cài cho cả hai.
+  if [ "$WANT_CLAUDE" = 0 ] && [ "$WANT_CODEX" = 0 ]; then
+    WANT_CLAUDE=1
+    WANT_CODEX=1
   fi
+  project_targets=()
+  [ "$WANT_CLAUDE" = 1 ] && project_targets+=("$TARGET/.claude/skills" claude)
+  [ "$WANT_CODEX" = 1 ] && project_targets+=("$TARGET/.codex/skills" codex)
+  if [ "$RULES_ONLY" = 0 ]; then
+    preflight_targets "${project_targets[@]}" || exit 1
+  fi
+  project_scope="PER-PROJECT tại $TARGET"
+  [ "$WANT_CLAUDE" = 1 ] && project_scope+=" + Claude Code"
+  [ "$WANT_CODEX" = 1 ] && project_scope+=" + Codex"
   if [ "$CHECK" = 1 ]; then
-    report_check "PER-PROJECT tại $TARGET"
+    report_check "$project_scope"
     exit 0
   fi
-  echo "Cài PER-PROJECT vào $TARGET"
-  merge_rules "$TARGET/CLAUDE.md" "$KIT_DIR/claude/CLAUDE.md"
-  merge_rules "$TARGET/AGENTS.md" "$KIT_DIR/codex/AGENTS.md"
+  echo "Cài $project_scope"
+  if [ "$WANT_CLAUDE" = 1 ]; then
+    merge_rules "$TARGET/CLAUDE.md" "$KIT_DIR/claude/CLAUDE.md"
+  fi
+  if [ "$WANT_CODEX" = 1 ]; then
+    merge_rules "$TARGET/AGENTS.md" "$KIT_DIR/codex/AGENTS.md"
+  fi
   if [ "$RULES_ONLY" = 0 ]; then
-    copy_skills "$TARGET/.claude/skills" claude
-    copy_skills "$TARGET/.codex/skills" codex
+    [ "$WANT_CLAUDE" = 1 ] && copy_skills "$TARGET/.claude/skills" claude
+    [ "$WANT_CODEX" = 1 ] && copy_skills "$TARGET/.codex/skills" codex
     [ -d "$TARGET/.git" ] && ignore_kit_skills "$TARGET"
-    # Chế độ project cố ý KHÔNG sửa config toàn máy — cài cho một dự án mà đi
-    # đổi settings của cả máy là sai. Nhưng phải nói ra hai thứ còn thiếu, không
-    # thì người dùng tưởng đã xong.
-    if [ -f "$CLAUDE_DIR/settings.json" ] && python3 -c "
+    # Cấu hình machine-level của Claude chỉ liên quan khi cài Claude vào project.
+    if [ "$WANT_CLAUDE" = 1 ]; then
+      if [ -f "$CLAUDE_DIR/settings.json" ] && python3 -c "
 import json,sys
 c=json.load(open('$CLAUDE_DIR/settings.json'))
 sys.exit(0 if c.get('enabledPlugins',{}).get('superpowers@claude-plugins-official') else 1)
 " 2>/dev/null; then
-      echo "  ! Máy đang bật plugin superpowers ($CLAUDE_DIR/settings.json), mà dự án vừa" >&2
-      echo "    nhận bản superpowers trong repo — phiên sau mỗi skill sẽ hiện HAI lần." >&2
-      echo "    Tắt bằng /plugin, hoặc chạy '$0 --claude' để installer tắt hộ." >&2
-    fi
-    if ! python3 -c "
+        echo "  ! Máy đang bật plugin superpowers ($CLAUDE_DIR/settings.json), mà dự án vừa" >&2
+        echo "    nhận bản superpowers trong repo — phiên sau mỗi skill sẽ hiện HAI lần." >&2
+        echo "    Tắt bằng /plugin, hoặc chạy '$0 --claude' để installer tắt hộ." >&2
+      fi
+      if ! python3 -c "
 import json,sys,os
 p=os.path.expanduser('$CLAUDE_DIR/.claude.json')
 sys.exit(0 if os.path.exists(p) and 'playwright' in json.load(open(p)).get('mcpServers',{}) else 1)
 " 2>/dev/null; then
-      echo "  ! Máy chưa khai MCP playwright, nên skill verifying-ui-with-playwright sẽ không" >&2
-      echo "    có công cụ browser_* nào để gọi. Chạy '$0 --claude' để khai (cấp máy)." >&2
+        echo "  ! Máy chưa khai MCP playwright, nên skill verifying-ui-with-playwright sẽ không" >&2
+        echo "    có công cụ browser_* nào để gọi. Chạy '$0 --claude' để khai (cấp máy)." >&2
+      fi
     fi
   else
     echo "  skills -> bỏ qua (--rules-only)"

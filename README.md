@@ -117,11 +117,23 @@ cd ~/duong/dan/du-an
 ~/dotagents/install.sh --project
 ```
 
-Ghi rules vào `CLAUDE.md` + `AGENTS.md`; cài 28 skill của Claude Code vào `.claude/skills/` và 28 skill đúng biến thể của Codex vào `.codex/skills/`.
+Mặc định, lệnh này ghi rules và cài skills cho cả Claude Code (`CLAUDE.md`, `.claude/skills/`) lẫn Codex (`AGENTS.md`, `.codex/skills/`). Muốn chỉ cài một agent, thêm selector:
 
-**Skills không đi vào git.** Installer ghi một khối vào `.gitignore` liệt kê đích danh cả hai bộ 28 skill, nên `git add -A` không kéo bản sao kit theo. Đồng đội chỉ cần chạy `install.sh --project` để có cùng bộ skill.
+```bash
+~/dotagents/install.sh --project /đường/dẫn/tới/project --codex
+~/dotagents/install.sh --project /đường/dẫn/tới/project --claude
+```
 
-Khối đó chỉ chặn tên skill của kit trong `.claude/skills/` và `.codex/skills/`. Skill bạn tự viết cho dự án (ví dụ `.claude/skills/deploy-staging/`) vẫn commit bình thường.
+`--codex` chỉ đụng tới rules Codex và `.codex/skills/`; `--claude` chỉ đụng tới rules Claude Code và `.claude/skills/`. Dùng `--all` để ghi rõ muốn cài cả hai. Các selector cũng kết hợp được với `--check` để kiểm tra trước và `--rules-only` để chỉ ghi rules:
+
+```bash
+~/dotagents/install.sh --check --project /đường/dẫn/tới/project --codex
+~/dotagents/install.sh --project /đường/dẫn/tới/project --claude --rules-only
+```
+
+**Skills không đi vào git.** Installer ghi một khối vào `.gitignore` liệt kê đích danh skill dotagents đã cài, nên `git add -A` không kéo bản sao kit theo. Đồng đội chỉ cần chạy `install.sh --project` để có cùng bộ skill.
+
+Khối đó chỉ chặn tên skill của kit trong thư mục skills được cài. Skill bạn tự viết cho dự án (ví dụ `.claude/skills/deploy-staging/`) vẫn commit bình thường.
 
 Chỉ muốn rules, khỏi cần thư mục skills trong dự án:
 
