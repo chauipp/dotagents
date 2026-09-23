@@ -1,0 +1,7 @@
+interface:
+  display_name: "Clear conversation"
+  short_description: "Remove obsolete conversation log entries"
+  default_prompt: "Use $clear-conversation to remove obsolete conversation log entries from the current worktree."
+
+policy:
+  allow_implicit_invocation: false

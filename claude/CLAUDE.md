@@ -7,25 +7,6 @@
 - Nếu thiếu một trong hai giá trị, dừng trước commit/push và yêu cầu người dùng cấu hình hoặc xác nhận.
 - Không thêm hoặc giữ attribution công cụ tự động trong code, commit message/template/trailer, PR, changelog hay metadata do mình tạo; vẫn giữ copyright, license và provenance đã có nếu người dùng không yêu cầu xóa.
 
-# Chế độ `no comment` (opt-in)
-- Mặc định **không** áp dụng các quy tắc trong mục này.
-- Chỉ kích hoạt cho **lượt xử lý hiện tại** khi dòng không trống đầu tiên trong tin nhắn của người
-  dùng là chính xác `no comment`. Viết yêu cầu ở các dòng sau.
-- Chỉ nhắc, trích dẫn hoặc đặt câu hỏi về cụm từ `no comment` không kích hoạt chế độ này.
-- Chế độ này không được kế thừa sang bất kỳ lượt sau nào; mỗi lượt muốn dùng phải gửi lại trigger
-  theo đúng cú pháp trên.
-- Khi đã kích hoạt, không giao việc cho agent/subagent khác; tự mình xử lý toàn bộ task trong
-  thread hiện tại.
-- Không diễn giải kế hoạch, các bước trung gian, tiến độ hoặc suy luận trong lúc làm; không gửi
-  commentary giữa chừng. Làm liền mạch cho đến khi hoàn tất các yêu cầu, kiểm tra phù hợp và
-  khắc phục lỗi phát hiện được.
-- Không tự tạo plan/spec chỉ để báo cáo tiến độ. Chỉ tạo hoặc cập nhật các tài liệu đó nếu task
-  hoặc repository bắt buộc phải có.
-- Chỉ hỏi lại khi thiếu thông tin hoặc quyền hạn khiến không thể tiếp tục an toàn; còn lại tự đưa
-  ra giả định hợp lý trong phạm vi yêu cầu.
-- Khi xong, gửi một câu trả lời cuối ngắn gọn bằng tiếng Việt, nêu kết quả, các kiểm tra đã chạy
-  và mọi hạn chế còn lại. Không hứa hẹn tuyệt đối về thời gian hoặc việc không có lỗi.
-
 # superpowers
 - Bộ 14 skill quy trình đã cài sẵn. Việc nhiều bước thì **gọi Skill tool với `using-superpowers`
   trước** — nó là mục lục, chỉ ra việc nào dùng skill nào.
@@ -114,16 +95,3 @@
 - Tên file dùng mốc thời gian lúc cặp chat được ghi, định dạng `YY-MM-DD_HH-mm-ss.md`. Nếu hai cặp chat có cùng giây, thêm hậu tố ngắn để tránh ghi đè.
 - Ghi file sau mỗi câu trả lời của agent. Nếu context bị compact hoặc thiếu, chỉ lưu phần thực sự nhìn thấy; không được bịa hoặc khôi phục phần không còn trong context.
 - Nếu user yêu cầu không lưu conversation, tôn trọng yêu cầu đó. Không thêm `conversation/` vào `.gitignore`.
-
-# Quy tắc dọn conversation
-
-- Khi user gõ `dọn conversation`, `clear chat` hoặc `clear conversation` (không phân biệt hoa/thường), duyệt toàn bộ file chat trong `conversation/` của worktree đang làm việc rồi dọn chúng.
-- Giữ lại mọi cặp chat có ích cho việc thực hiện task hoặc luồng làm việc: yêu cầu, tiêu chí nghiệm thu, quyết định, bối cảnh, thiết kế, trạng thái/tiến độ, lỗi, blocker, phản hồi hoặc chỉ dẫn thay đổi cách làm.
-- Xóa các cặp chat không còn mục đích hay ý nghĩa cho task/coding/luồng làm việc, như chào hỏi, xác nhận xã giao, lặp lại vô ích hoặc nội dung không liên quan. Nếu không chắc một chat có ích hay không, phải giữ lại.
-- Không tạo file conversation cho tin nhắn kích hoạt dọn, các cập nhật trong lúc dọn, hoặc câu trả lời kết quả dọn. Quy tắc này là ngoại lệ của yêu cầu ghi file sau mỗi câu trả lời.
-
-# Quy tắc compact conversation
-
-- Khi user yêu cầu hành động compact conversation, dùng skill `compacting-conversations` trước khi sửa hay xóa file.
-- Compact thay thế một dải file conversation liên tiếp bằng một file compact; không gom các file rời rạc theo chủ đề.
-- File compact là ngoại lệ được user cho phép đối với quy tắc lưu nguyên văn. Không tạo log conversation riêng cho lệnh compact, cập nhật trong lúc làm hoặc kết quả compact.

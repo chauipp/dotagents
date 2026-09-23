@@ -42,6 +42,11 @@ CLAUDE_CONFIG_DIR="$TMP_DIR/claude-config" CODEX_HOME="$TMP_DIR/codex-config" \
 
 grep -q 'dotagents:begin' "$project/CLAUDE.md" || fail 'Project install did not write Claude rules'
 grep -q 'dotagents:begin' "$project/AGENTS.md" || fail 'Project install did not write Codex rules'
+for rules in "$project/CLAUDE.md" "$project/AGENTS.md"; do
+  if grep -qE '/no-clarify|clear chat|clear conversation|compact conversation|compacting-conversations' "$rules"; then
+    fail "Command-specific trigger is still active in $rules"
+  fi
+done
 assert_skill_set claude "$project/.claude/skills"
 assert_skill_set codex "$project/.codex/skills"
 [ -f "$KIT_DIR/shared/skills/preserving-user-git-identity/SKILL.md" ] || fail "Missing shared Git identity skill"
