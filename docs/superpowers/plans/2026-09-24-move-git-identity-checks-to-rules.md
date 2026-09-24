@@ -5,6 +5,7 @@
   - Xóa `skills/preserving-user-git-identity/SKILL.md`; installer lấy danh sách động nên bản trong manifest cũ sẽ được dọn khi cập nhật.
 - [x] Task 2: Đồng bộ README và rà tham chiếu hiện hành
   - Cập nhật số lượng còn 29 tổng, 27 cho Claude, 29 cho Codex; bỏ hàng skill khỏi danh mục.
+  - Đổi assertion installer test từ yêu cầu skill tồn tại sang kiểm tra skill đã gỡ và checklist có trong hai rules.
   - Xác nhận không còn tham chiếu hiện hành trong catalog/installer tới skill đã gỡ.
 
 ## Kết quả
