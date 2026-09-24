@@ -4,9 +4,12 @@
 #   ./install.sh                     # global, cài cho mọi agent phát hiện được
 #   ./install.sh --claude            # chỉ Claude Code  -> $CLAUDE_CONFIG_DIR (mặc định ~/.claude)
 #   ./install.sh --codex             # chỉ Codex        -> $CODEX_HOME (mặc định ~/.codex)
+#   ./install.sh --all               # cả Claude Code và Codex global
+#   ./install.sh --rules-only        # global: chỉ cài rules
 #   ./install.sh --project [DIR]     # cả Claude Code và Codex (mặc định: thư mục hiện tại)
 #   ./install.sh --project DIR --claude       # chỉ Claude Code trong project
 #   ./install.sh --project DIR --codex        # chỉ Codex trong project
+#   ./install.sh --project DIR --all          # cả hai agent trong project
 #   ./install.sh --project DIR --rules-only   # chỉ rules, không copy skills
 #   ./install.sh --check --project DIR        # kiểm tra an toàn, không ghi file
 #
@@ -99,10 +102,36 @@ is_managed_skill() {
   [ -f "$manifest" ] && grep -qxF "$name" "$manifest"
 }
 
+is_identical_kit_skill() {
+  local dest="$1" name="$2"
+  [ -d "$dest/$name" ] && diff -qr "$KIT_DIR/skills/$name" "$dest/$name" >/dev/null 2>&1
+}
+
+skill_supports_agent() {
+  local skill_file="$1" agent="$2"
+  [ -f "$skill_file" ] || return 1
+  awk -v agent="$agent" '
+    NR == 1 && $0 != "---" { exit 0 }
+    NR > 1 && $0 == "---" { exit }
+    NR > 1 && /^agents:[[:space:]]*/ {
+      value=$0
+      sub(/^agents:[[:space:]]*/, "", value)
+      gsub(/[\[\],]/, " ", value)
+      for (i=1; i<=split(value, names, /[[:space:]]+/); i++)
+        if (names[i] == agent) found=1
+      seen=1
+    }
+    END { if (!seen || found) exit 0; exit 1 }
+  ' "$skill_file"
+}
+
 kit_skill_names() {
   local agent="$1" src
-  for src in "$KIT_DIR"/shared/skills/*/ "$KIT_DIR/$agent"/skills/*/; do
-    [ -d "$src" ] && basename "$src"
+  for src in "$KIT_DIR"/skills/*/; do
+    [ -d "$src" ] || continue
+    if skill_supports_agent "$src/SKILL.md" "$agent"; then
+      basename "$src"
+    fi
   done | sort -u
 }
 
@@ -113,7 +142,8 @@ preflight_skills() {
   while IFS= read -r name; do
     [ -n "$name" ] || continue
     if { [ -e "$dest/$name" ] || [ -L "$dest/$name" ]; } \
-      && ! is_managed_skill "$manifest" "$name"; then
+      && ! is_managed_skill "$manifest" "$name" \
+      && ! is_identical_kit_skill "$dest" "$name"; then
       echo "  ! Collision: $dest/$name là skill có sẵn nhưng không thuộc manifest dotagents." >&2
       failed=1
     fi
@@ -144,24 +174,22 @@ report_check() {
   fi
 }
 
-# Copy shared/skills/, rồi chồng <agent>/skills/ lên đè.
-# Một vài skill (graphify) có biến thể riêng cho từng agent vì gọi tool khác nhau:
-# Claude Code dùng Agent tool, Codex dùng spawn_agent — dùng nhầm bản là hỏng skill.
+# Copy các skill từ danh mục duy nhất, lọc theo metadata agents trong SKILL.md.
 # $1 = thư mục đích, $2 = tên agent (claude | codex)
 copy_skills() {
-  local dest="$1" agent="$2" name n=0 gone=0 manifest="$1/.dotagents-manifest" new
+  local dest="$1" agent="$2" name n=0 gone=0 manifest="$1/.dotagents-manifest" new src
   mkdir -p "$dest"
   new="$(mktemp)"
-  for src in "$KIT_DIR"/shared/skills/*/ "$KIT_DIR/$agent"/skills/*/; do
-    [ -d "$src" ] || continue
-    name="$(basename "$src")"
+  while IFS= read -r name; do
+    [ -n "$name" ] || continue
+    src="$KIT_DIR/skills/$name"
     # Xoá trước rồi mới copy: nếu đích đang là symlink, cp -R sẽ báo lỗi
     # "cannot overwrite non-directory with directory" và làm script dừng giữa chừng.
     rm -rf "$dest/$name"
     cp -R "$src" "$dest/$name"
     printf '%s\n' "$name" >> "$new"
     n=$((n + 1))
-  done
+  done < <(kit_skill_names "$agent")
   # Skill từng phát hành rồi bị cắt. Máy cài từ thời chưa có manifest thì manifest
   # không hề biết chúng tồn tại, nên chạy lại bao nhiêu lần cũng không gỡ được —
   # phải gọi thẳng tên ra đây. Chỉ thêm vào đây tên ĐÃ TỪNG nằm trong repo.
@@ -374,17 +402,25 @@ else
     mkdir -p "$CLAUDE_DIR"
     backup "$CLAUDE_DIR/CLAUDE.md"
     merge_rules "$CLAUDE_DIR/CLAUDE.md" "$KIT_DIR/claude/CLAUDE.md"
-    copy_skills "$CLAUDE_DIR/skills" claude
-    tune_settings "$CLAUDE_DIR/settings.json"
-    add_playwright_claude "$CLAUDE_DIR"
+    if [ "$RULES_ONLY" = 0 ]; then
+      copy_skills "$CLAUDE_DIR/skills" claude
+      tune_settings "$CLAUDE_DIR/settings.json"
+      add_playwright_claude "$CLAUDE_DIR"
+    else
+      echo "  skills -> bỏ qua (--rules-only)"
+    fi
   fi
   if [ "$WANT_CODEX" = 1 ]; then
     echo "Cài CODEX vào $CODEX_DIR"
     mkdir -p "$CODEX_DIR"
     backup "$CODEX_DIR/AGENTS.md"
     merge_rules "$CODEX_DIR/AGENTS.md" "$KIT_DIR/codex/AGENTS.md"
-    copy_skills "$CODEX_DIR/skills" codex
-    tune_codex_config "$CODEX_DIR"
+    if [ "$RULES_ONLY" = 0 ]; then
+      copy_skills "$CODEX_DIR/skills" codex
+      tune_codex_config "$CODEX_DIR"
+    else
+      echo "  skills -> bỏ qua (--rules-only)"
+    fi
   fi
 fi
 

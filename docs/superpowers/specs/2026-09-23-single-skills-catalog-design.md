@@ -16,7 +16,7 @@ Dotagents có một thư mục nguồn `skills/` làm danh mục canonical cho m
 
 ## Cấu trúc và luồng cài đặt
 
-`skills/` là nguồn duy nhất, với mỗi skill có `SKILL.md` và các tài nguyên cần thiết. Metadata trong skill thể hiện agent đích khi skill không áp dụng cho mọi agent; thiếu giới hạn agent nghĩa là dùng được cho cả Claude và Codex. Installer nhận lựa chọn agent/phạm vi, duyệt danh mục, lọc theo metadata rồi chép skill phù hợp vào đích runtime hiện hành. Nội dung rules và các tùy chọn project/global hiện có không đổi ngoài việc dùng chung danh mục skill.
+`skills/` là nguồn duy nhất, với mỗi skill có `SKILL.md` và các tài nguyên cần thiết. Metadata trong skill thể hiện agent đích khi skill không áp dụng cho mọi agent; thiếu giới hạn agent nghĩa là dùng được cho cả Claude và Codex. Installer nhận lựa chọn agent/phạm vi, duyệt danh mục, lọc theo metadata rồi chép skill phù hợp vào đích runtime hiện hành. Nếu đích đã có bản skill không nằm trong manifest nhưng trùng nội dung hoàn toàn với nguồn canonical, installer có thể nhận bản đó vào manifest; skill cùng tên nhưng nội dung khác vẫn gây collision để bảo toàn chỉnh sửa riêng. Nội dung rules và các tùy chọn project/global hiện có không đổi ngoài việc dùng chung danh mục skill.
 
 ## Di chuyển và tương thích
 
@@ -32,4 +32,4 @@ Dotagents có một thư mục nguồn `skills/` làm danh mục canonical cho m
 
 ## Plan thực thi
 
-Chưa tạo; sẽ liên kết tới `../plans/2026-09-23-single-skills-catalog.md` sau khi spec được duyệt.
+Kế hoạch thực thi: [2026-09-23-single-skills-catalog.md](../plans/2026-09-23-single-skills-catalog.md).

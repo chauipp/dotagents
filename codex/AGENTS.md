@@ -38,7 +38,7 @@
 - Làm xong một task VÀ đã kiểm chứng là đúng thì chạy skill `capturing-what-worked` để cân nhắc
   ghi lại. Nó có cổng chặn riêng, hầu hết task sẽ không đáng ghi — cứ để nó tự quyết.
 - Ba chỗ ghi, `capturing-what-worked` có cây quyết định đầy đủ:
-  - Đúng ở mọi dự án → `~/dotagents/shared/skills/` rồi chạy `~/dotagents/install.sh`
+  - Đúng ở mọi dự án → `~/dotagents/skills/` rồi chạy `~/dotagents/install.sh`
   - Quy trình riêng của dự án này → `<dự án>/.claude/skills/<tên>/SKILL.md` (Claude) hoặc `<dự án>/.codex/skills/<tên>/SKILL.md` (Codex)
   - Kiến thức riêng của dự án này → `<dự án>/docs/recipes/<slug>.md`
 - Viết skill mà cần chặt chẽ (loại luật agent hay lách) thì dùng skill `writing-skills` — nó bắt

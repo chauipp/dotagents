@@ -41,7 +41,7 @@ Hai câu hỏi, theo đúng thứ tự này.
 
 ### Câu 1: cách làm này có đúng ở một dự án khác không?
 
-**CÓ** → skill chung: `~/dotagents/shared/skills/<tên>/SKILL.md`, rồi chạy
+**CÓ** → skill chung: `~/dotagents/skills/<tên>/SKILL.md`, rồi chạy
 `~/dotagents/install.sh`. Từ đó mọi dự án trên mọi máy đều có.
 
 Ví dụ: "cách bắt lỗi hydration mismatch của React", "cách dò rò rỉ bộ nhớ trong test Node".
@@ -77,7 +77,7 @@ chủ động đi tìm mới ra.
 
 | Chỗ | Khi nào | Agent tìm ra bằng cách nào |
 |---|---|---|
-| `~/dotagents/shared/skills/` | Đúng ở mọi dự án | Tự thấy, mọi máy mọi dự án |
+| `~/dotagents/skills/` | Đúng ở mọi dự án | Tự thấy, mọi máy mọi dự án |
 | `<dự án>/.claude/skills/` | Quy trình riêng của dự án này | Tự thấy khi mở dự án này |
 | `<dự án>/docs/recipes/` | Kiến thức riêng của dự án này | Phải chủ động `ls` thư mục |
 
@@ -87,7 +87,7 @@ Hai chỗ đầu đi theo git của chính dự án hoặc của dotagents, nên
 
 ```bash
 ls docs/recipes/ .claude/skills/ 2>/dev/null
-grep -ril "<từ khoá>" docs/recipes/ .claude/skills/ ~/dotagents/shared/skills/ 2>/dev/null
+grep -ril "<từ khoá>" docs/recipes/ .claude/skills/ ~/dotagents/skills/ 2>/dev/null
 ```
 
 Có file gần đúng thì **sửa nó**. Hai file cùng chủ đề mà lệch nhau còn tệ hơn không có file nào.

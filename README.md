@@ -2,7 +2,7 @@
 
 Rules + skills dùng chung cho các coding agent. Clone về máy nào, dự án nào cũng cài được trong một lệnh.
 
-Hiện hỗ trợ **Claude Code** và **Codex**. Hai bên đọc cùng một định dạng `SKILL.md`, nên `shared/skills/` phục vụ được cả hai mà không cần chuyển đổi.
+Hiện hỗ trợ **Claude Code** và **Codex**. Hai bên đọc cùng một định dạng `SKILL.md`, nên `skills/` là nguồn duy nhất, còn metadata trong từng `SKILL.md` giới hạn skill theo agent khi cần.
 
 ## Cho agent đọc
 
@@ -71,7 +71,7 @@ done
 Chỉ liệt kê thư mục có `.dotagents-manifest`, tức thư mục thật sự do dotagents cài — thư mục
 config của account khác trên cùng máy không lọt vào.
 
-Mỗi thư mục phải ra **28 skill và đúng 1 khối rules**. Ra 2 khối là file đang chứa rules hai lần —
+Claude cài **28 skill**, còn Codex cài **30 skill**. Mỗi thư mục cài đặt phải có đúng 1 khối rules. Ra 2 khối là file đang chứa rules hai lần —
 xem mục [Lần đầu chạy trên máy đã có sẵn CLAUDE.md](#lần-đầu-chạy-trên-máy-đã-có-sẵn-claudemd).
 Không ra dòng nào là bước 1 chưa chạy được.
 
@@ -101,6 +101,8 @@ Chỉ định rõ nếu muốn:
 ./install.sh --claude
 ./install.sh --codex
 ./install.sh --all
+./install.sh --codex --rules-only  # chỉ cập nhật rules Codex, không cài skills/config
+./install.sh --all --rules-only   # chỉ cập nhật rules của cả hai agent
 ```
 
 Dùng config dir khác mặc định:
@@ -150,7 +152,7 @@ Luôn kiểm tra trước khi cài:
 ~/dotagents/install.sh --project /đường/dẫn/tới/project
 ```
 
-`--check` không tạo, sửa hay xóa file. Nếu skill kit trùng tên với một skill đã có nhưng tên đó không nằm trong `.dotagents-manifest`, installer báo collision và dừng trước khi sửa rules, skills hay `.gitignore`. Đổi tên/di chuyển skill riêng hoặc quyết định thủ công cách xử lý rồi mới chạy lại; installer không tự ghi đè collision.
+`--check` không tạo, sửa hay xóa file. Nếu skill kit trùng tên với một skill đã có nhưng tên đó không nằm trong `.dotagents-manifest`, installer chỉ nhận bản trùng khớp chính xác với danh mục kit; nếu nội dung khác, nó báo collision và dừng trước khi sửa rules, skills hay `.gitignore`. Cách này nhận lại an toàn các profile map từng được chép thủ công theo hướng dẫn cũ. Đổi tên/di chuyển skill riêng hoặc quyết định thủ công cách xử lý rồi mới chạy lại; installer không tự ghi đè collision.
 
 Skill kit đã có trong manifest được cập nhật bình thường. Skill riêng tên khác, rules nằm ngoài marker dotagents, và mọi rule `.gitignore` nằm ngoài block dotagents đều được giữ nguyên.
 
@@ -175,27 +177,24 @@ Với dự án cài per-project, thêm `--project /đường/dẫn/tới/project
 ## Cấu trúc
 
 ```
-local/skills/          2 skill viết prompt map, chỉ cài local theo hướng dẫn local/README.md
-shared/skills/         27 skill giống nhau ở mọi agent (5 thiết kế + 14 superpowers + 8 tự viết)
+skills/                30 skill ở một nguồn (27 dùng chung + graphify + 2 profile Codex)
 claude/CLAUDE.md       rules bản Claude Code
-claude/skills/         skill riêng cho Claude Code (graphify)
 codex/AGENTS.md        rules bản Codex
-codex/skills/          skill riêng cho Codex (graphify)
 install.sh
 SUPERPOWERS-LICENSE    MIT, cho 14 skill copy từ obra/superpowers
 ```
 
-Installer copy `shared/skills/` trước, rồi chồng `<agent>/skills/` lên đè. Hầu hết skill chỉ là văn bản nên dùng chung được; skill nào **gọi tool cụ thể** thì phải tách bản.
+Installer quét `skills/` và cài vào thư mục đích của từng agent. Mặc định skill áp dụng cho cả Claude Code và Codex; có thể khai báo `agents: codex` trong frontmatter để giới hạn profile map cho Codex. Hai profile map vì thế được cài cả global lẫn project khi chọn Codex.
 
-Hiện chỉ `graphify` cần tách: bản Claude Code dispatch subagent bằng Agent tool (`subagent_type="general-purpose"`), bản Codex dùng `spawn_agent`/`wait_agent`/`close_agent` và cần `multi_agent = true` trong `~/.codex/config.toml`. Cài nhầm bản là skill hỏng, nên đừng gộp chúng vào `shared/`.
+Graphify là một thư mục skill duy nhất với `SKILL.md` điều phối và các workflow riêng tại `references/claude/` và `references/codex/`; tài liệu tham chiếu giống nhau chỉ lưu một bản dưới `references/`.
 
-Thêm agent mới sau này: thêm một thư mục `<agent>/` chứa file rules (+ `skills/` nếu cần bản riêng) và một nhánh trong `install.sh`.
+Thêm agent mới sau này: thêm nhánh cài đặt tương ứng; metadata `agents` xác định skill nào hỗ trợ agent đó.
 
 ## Có gì bên trong
 
 **Rules** — luôn trả lời tiếng Việt, đẩy agent chủ động dùng superpowers, danh sách skill opt-in, mặc định mỗi task một worktree (tuyên bố sẵn để `using-git-worktrees` khỏi hỏi), bắt kiểm UI trước khi báo xong, quy tắc checkbox cho từng task trong plan, quy tắc viết summary khi plan hoàn tất kèm chuỗi trỏ nhau spec ↔ plan ↔ summary.
 
-**Skills** — 28 skill, trong đó 13 skill dưới đây:
+**Skills** — 30 skill trong danh mục (28 áp dụng cho Claude, 30 cho Codex), trong đó 13 skill dưới đây:
 
 - `graphify` — biến mọi input thành knowledge graph
 - Tự viết: `verifying-ui-with-playwright` (bắt kiểm UI bằng trình duyệt thật trước khi báo xong), `capturing-what-worked` (ghi lại cách làm đúng vào `docs/recipes/` để lần sau khỏi mò lại), `compacting-conversations` (tóm tắt và thay thế an toàn các dải chat cũ liên tiếp), `no-clarify` (thực hiện trực tiếp không gửi commentary), `clear-conversation` (dọn log chat không còn hữu ích), `compact-conversation` (thu gọn một dải log chat liên tiếp), `map-subagent-workflow` (quy trình phối hợp agent xây dựng map Unreal theo spatial spec chi tiết)
@@ -210,16 +209,16 @@ người dùng gọi rõ bằng giao diện skill `$no-clarify`, `$clear-convers
 
 **superpowers** — 14 skill quy trình (`brainstorming`, `writing-plans`, `executing-plans`, `subagent-driven-development`, `test-driven-development`, `systematic-debugging`…), copy từ [obra/superpowers](https://github.com/obra/superpowers) v6.2.0, giấy phép MIT (xem `SUPERPOWERS-LICENSE`).
 
-Nằm trong `shared/skills/` chứ không cài dưới dạng plugin, vì mục tiêu của repo là "đưa link cho agent bất kỳ trên máy bất kỳ là cài được": agent chạy `bash` thì gọi được `git clone`, chứ không gọi được `/plugin`. Codex vốn cũng không đọc plugin của Claude Code. Hệ quả:
+Nằm trong `skills/` chứ không cài dưới dạng plugin, vì mục tiêu của repo là "đưa link cho agent bất kỳ trên máy bất kỳ là cài được": agent chạy `bash` thì gọi được `git clone`, chứ không gọi được `/plugin`. Codex vốn cũng không đọc plugin của Claude Code. Hệ quả:
 
 - Tiền tố `superpowers:` trong các tham chiếu chéo giữa skill đã bị bỏ — cài dạng skill thường thì tên là `writing-plans`, không phải `superpowers:writing-plans`.
 - Plugin `superpowers@claude-plugins-official` bị installer **tắt** trong `settings.json`, nếu không mỗi skill sẽ hiện hai lần.
 - Mất hook `SessionStart` của plugin (thứ nhồi sẵn `using-superpowers` vào đầu mỗi phiên). Thay vào đó `CLAUDE.md` / `AGENTS.md` có mục `# superpowers` đẩy agent chủ động đọc `using-superpowers` khi việc nhiều bước — rules cũng được nạp mỗi phiên nên tác dụng tương đương.
-- Không tự cập nhật theo marketplace. Lên bản mới: copy lại `skills/` từ upstream vào `shared/skills/` rồi `sed -i 's/superpowers://g'`.
+- Không tự cập nhật theo marketplace. Lên bản mới: copy lại skill từ upstream vào `skills/` rồi `sed -i 's/superpowers://g'`.
 
-## Gọi skill viết prompt map (chỉ local)
+## Gọi skill viết prompt map (Codex)
 
-Hai skill thay thế `writing-prompts` nằm ở `local/skills/`, ngoài bộ 28 skill của installer. Chúng có cùng hợp đồng vai trò và tiêu chí chất lượng, chỉ khác model. `install.sh` global hoặc project đều không tự cài hai profile này; xem [cách cài local](local/README.md).
+Hai profile thay thế `writing-prompts` nằm trong `skills/` và được installer cài tự động khi chọn Codex, ở cả phạm vi global lẫn project. Chúng có cùng hợp đồng vai trò và tiêu chí chất lượng, chỉ khác model. Xem [chi tiết hai profile](local/README.md).
 
 Chọn parent **Sol xhigh**, rồi gọi:
 
@@ -249,7 +248,7 @@ Nếu phần cũ **trùng tiêu đề mục** với rules mới, installer sẽ 
 
 ## Cập nhật bộ kit
 
-Sửa `claude/CLAUDE.md`, `codex/AGENTS.md` hoặc `shared/skills/`, commit, push. Máy khác `git pull && ./install.sh`.
+Sửa `claude/CLAUDE.md`, `codex/AGENTS.md` hoặc `skills/`, commit, push. Máy khác `git pull && ./install.sh`.
 
 ## Máy mới cần gì thêm
 

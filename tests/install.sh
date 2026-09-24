@@ -20,13 +20,27 @@ assert_skill_set() {
   local manifest="$skills_dir/.dotagents-manifest"
   local expected="$TMP_DIR/$agent-expected" actual="$TMP_DIR/$agent-actual"
 
-  find "$KIT_DIR/shared/skills" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | sort > "$expected"
-  printf 'graphify\n' >> "$expected"
+  : > "$expected"
+  for skill_dir in "$KIT_DIR"/skills/*/; do
+    [ -d "$skill_dir" ] || continue
+    if awk -v agent="$agent" '
+      NR == 1 && $0 != "---" { exit 0 }
+      NR > 1 && $0 == "---" { exit }
+      NR > 1 && /^agents:[[:space:]]*/ {
+        value=$0; sub(/^agents:[[:space:]]*/, "", value); gsub(/[\[\],]/, " ", value)
+        for (i=1; i<=split(value, names, /[[:space:]]+/); i++) if (names[i] == agent) found=1
+        seen=1
+      }
+      END { if (!seen || found) exit 0; exit 1 }
+    ' "$skill_dir/SKILL.md"; then
+      basename "$skill_dir" >> "$expected"
+    fi
+  done
   [ -f "$manifest" ] || fail "$agent skills were not installed"
   sort "$manifest" > "$actual"
   sort -o "$expected" "$expected"
   assert_file_equal "$expected" "$actual"
-  assert_file_equal "$KIT_DIR/$agent/skills/graphify/SKILL.md" "$skills_dir/graphify/SKILL.md"
+  assert_file_equal "$KIT_DIR/skills/graphify/SKILL.md" "$skills_dir/graphify/SKILL.md"
 }
 
 project="$TMP_DIR/project"
@@ -49,9 +63,9 @@ for rules in "$project/CLAUDE.md" "$project/AGENTS.md"; do
 done
 assert_skill_set claude "$project/.claude/skills"
 assert_skill_set codex "$project/.codex/skills"
-[ -f "$KIT_DIR/shared/skills/preserving-user-git-identity/SKILL.md" ] || fail "Missing shared Git identity skill"
-assert_file_equal "$KIT_DIR/shared/skills/preserving-user-git-identity/SKILL.md" "$project/.claude/skills/preserving-user-git-identity/SKILL.md"
-assert_file_equal "$KIT_DIR/shared/skills/preserving-user-git-identity/SKILL.md" "$project/.codex/skills/preserving-user-git-identity/SKILL.md"
+[ -f "$KIT_DIR/skills/preserving-user-git-identity/SKILL.md" ] || fail "Missing Git identity skill"
+assert_file_equal "$KIT_DIR/skills/preserving-user-git-identity/SKILL.md" "$project/.claude/skills/preserving-user-git-identity/SKILL.md"
+assert_file_equal "$KIT_DIR/skills/preserving-user-git-identity/SKILL.md" "$project/.codex/skills/preserving-user-git-identity/SKILL.md"
 grep -q "preserving-user-git-identity" "$project/CLAUDE.md" || fail "Claude rules omit Git identity safeguard"
 grep -q "preserving-user-git-identity" "$project/AGENTS.md" || fail "Codex rules omit Git identity safeguard"
 grep -q '^\.claude/skills/graphify/$' "$project/.gitignore" || fail 'Claude kit skills are not ignored'
@@ -96,6 +110,12 @@ CODEX_HOME="$TMP_DIR/codex-config" "$KIT_DIR/install.sh" --codex >/dev/null
 grep -q '^multi_agent = true$' "$TMP_DIR/codex-config/config.toml" \
   || fail 'Codex install did not enable multi_agent inside an existing features table'
 
+rules_only_global="$TMP_DIR/rules-only-global"
+CODEX_HOME="$rules_only_global" "$KIT_DIR/install.sh" --codex --rules-only >/dev/null
+[ -f "$rules_only_global/AGENTS.md" ] || fail 'Global --rules-only did not write Codex rules'
+[ ! -e "$rules_only_global/skills" ] || fail 'Global --rules-only copied skills'
+[ ! -e "$rules_only_global/config.toml" ] || fail 'Global --rules-only changed Codex config'
+
 global_claude="$TMP_DIR/global-claude"
 mkdir -p "$global_claude/skills/brainstorming"
 printf 'global skill' > "$global_claude/skills/brainstorming/SKILL.md"
@@ -107,20 +127,15 @@ grep -q 'brainstorming' "$TMP_DIR/global-collision-output" || fail 'Global colli
 grep -qx 'global skill' "$global_claude/skills/brainstorming/SKILL.md" \
   || fail 'Global collision changed the custom skill'
 
-# Map-prompt profiles are opt-in project-local packages, never global kit skills.
-for name in writing-prompts writing-prompts-map-sol writing-prompts-map-astra; do
-  [ ! -e "$TMP_DIR/codex-config/skills/$name" ] || fail "Map prompt skill leaked into global install: $name"
-done
+# Prompt-map profiles are in the canonical catalog and only installed for Codex.
 for name in writing-prompts-map-sol writing-prompts-map-astra; do
-  [ -f "$KIT_DIR/local/skills/$name/SKILL.md" ] || fail "Missing local profile: $name"
-  cp -R "$KIT_DIR/local/skills/$name" "$project/.codex/skills/$name"
+  [ -f "$KIT_DIR/skills/$name/SKILL.md" ] || fail "Missing Codex profile: $name"
+  grep -qxF "$name" "$project/.codex/skills/.dotagents-manifest" || fail "Codex profile not installed: $name"
+  if grep -qxF "$name" "$project/.claude/skills/.dotagents-manifest"; then fail "Codex profile leaked into Claude: $name"; fi
 done
-"$KIT_DIR/install.sh" --project "$project" >/dev/null
-for name in writing-prompts-map-sol writing-prompts-map-astra; do
-  assert_file_equal "$KIT_DIR/local/skills/$name/SKILL.md" "$project/.codex/skills/$name/SKILL.md"
-  if grep -qxF "$name" "$project/.codex/skills/.dotagents-manifest"; then fail "Local profile incorrectly claimed by global kit: $name"; fi
-done
-cmp "$KIT_DIR/local/skills/writing-prompts-map-sol/references/workflow.md" "$KIT_DIR/local/skills/writing-prompts-map-astra/references/workflow.md" || fail 'Profile workflow drift'
-cmp "$KIT_DIR/local/skills/writing-prompts-map-sol/references/roles.md" "$KIT_DIR/local/skills/writing-prompts-map-astra/references/roles.md" || fail 'Profile role drift'
+cmp "$KIT_DIR/skills/writing-prompts-map-sol/references/workflow.md" \
+  "$KIT_DIR/skills/writing-prompts-map-astra/references/workflow.md" || fail 'Profile workflow drift'
+cmp "$KIT_DIR/skills/writing-prompts-map-sol/references/roles.md" \
+  "$KIT_DIR/skills/writing-prompts-map-astra/references/roles.md" || fail 'Profile role drift'
 
 echo 'PASS: installer preserves custom skills, detects collisions, and supports dry-run checks'
