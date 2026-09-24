@@ -192,29 +192,67 @@ Thêm agent mới sau này: thêm nhánh cài đặt tương ứng; metadata `ag
 
 ## Có gì bên trong
 
-**Rules** — luôn trả lời tiếng Việt, đẩy agent chủ động dùng superpowers, danh sách skill opt-in, mặc định mỗi task một worktree (tuyên bố sẵn để `using-git-worktrees` khỏi hỏi), bắt kiểm UI trước khi báo xong, quy tắc checkbox cho từng task trong plan, quy tắc viết summary khi plan hoàn tất kèm chuỗi trỏ nhau spec ↔ plan ↔ summary.
+**Rules** — mặc định trả lời tiếng Việt, quy định cách dùng quy trình Superpowers, yêu cầu worktree riêng cho task, kiểm UI trước khi báo xong, cách viết và hoàn tất plan, và các skill chỉ chạy khi người dùng gọi rõ.
 
-**Skills** — 30 skill trong danh mục (28 áp dụng cho Claude, 30 cho Codex), trong đó 13 skill dưới đây:
+**Skills** — 30 skill nằm trong `skills/`. Claude Code cài 28; Codex cài cả 30. Danh mục bên dưới được chia theo mục đích. Tên skill mở file `SKILL.md` tương ứng.
 
-- `graphify` — biến mọi input thành knowledge graph
-- Tự viết: `verifying-ui-with-playwright` (bắt kiểm UI bằng trình duyệt thật trước khi báo xong), `capturing-what-worked` (ghi lại cách làm đúng vào `docs/recipes/` để lần sau khỏi mò lại), `compacting-conversations` (tóm tắt và thay thế an toàn các dải chat cũ liên tiếp), `no-clarify` (thực hiện trực tiếp không gửi commentary), `clear-conversation` (dọn log chat không còn hữu ích), `compact-conversation` (thu gọn một dải log chat liên tiếp), `map-subagent-workflow` (quy trình phối hợp agent xây dựng map Unreal theo spatial spec chi tiết)
-- Frontend/UI: `taste-skill`, `minimalist-skill`, `brutalist-skill`, `redesign-skill`
-- Khác: `output-skill`
+### Quy trình Superpowers — 14 skill
 
-Skill thiết kế đều **opt-in** — chỉ chạy khi gọi đích danh (`$taste-skill`, `$redesign-skill`…).
+Các skill quy trình được lấy từ [obra/superpowers](https://github.com/obra/superpowers) v6.2.0, giấy phép MIT (xem `SUPERPOWERS-LICENSE`). Chúng được cài như skill thường, không phải plugin.
 
-Ba workflow `no-clarify`, `clear-conversation` và `compact-conversation` cũng chỉ chạy khi
-người dùng gọi rõ bằng giao diện skill `$no-clarify`, `$clear-conversation` hoặc
-`$compact-conversation`; `/skills` chỉ dùng để chọn skill khi agent hỗ trợ selector đó.
+| Skill | Dùng để |
+|---|---|
+| [using-superpowers](skills/using-superpowers/SKILL.md) | Tra mục lục và chọn quy trình phù hợp trước khi bắt đầu task. |
+| [brainstorming](skills/brainstorming/SKILL.md) | Làm rõ mục tiêu và thiết kế trước khi tạo tính năng hoặc đổi hành vi. |
+| [writing-plans](skills/writing-plans/SKILL.md) | Lập kế hoạch thực hiện từ yêu cầu hoặc spec nhiều bước. |
+| [executing-plans](skills/executing-plans/SKILL.md) | Thực hiện plan có sẵn theo các checkpoint. |
+| [subagent-driven-development](skills/subagent-driven-development/SKILL.md) | Chia task độc lập trong plan cho subagent và rà soát kết quả. |
+| [dispatching-parallel-agents](skills/dispatching-parallel-agents/SKILL.md) | Chia các việc độc lập có thể chạy song song cho nhiều agent. |
+| [test-driven-development](skills/test-driven-development/SKILL.md) | Viết test trước, xác nhận test đỏ, rồi triển khai thay đổi tối thiểu. |
+| [systematic-debugging](skills/systematic-debugging/SKILL.md) | Tìm nguyên nhân gốc của bug hoặc test lỗi trước khi sửa. |
+| [verification-before-completion](skills/verification-before-completion/SKILL.md) | Chạy kiểm tra và xác nhận bằng chứng trước khi nói task đã xong. |
+| [requesting-code-review](skills/requesting-code-review/SKILL.md) | Yêu cầu review khi hoàn tất thay đổi lớn hoặc trước khi merge. |
+| [receiving-code-review](skills/receiving-code-review/SKILL.md) | Đánh giá feedback review trước khi áp dụng. |
+| [using-git-worktrees](skills/using-git-worktrees/SKILL.md) | Tạo và chuẩn bị worktree riêng cho task. |
+| [finishing-a-development-branch](skills/finishing-a-development-branch/SKILL.md) | Hoàn tất nhánh sau khi kiểm tra đã đạt. |
+| [writing-skills](skills/writing-skills/SKILL.md) | Viết hoặc sửa skill và kiểm tra skill trước khi cài. |
 
-**superpowers** — 14 skill quy trình (`brainstorming`, `writing-plans`, `executing-plans`, `subagent-driven-development`, `test-driven-development`, `systematic-debugging`…), copy từ [obra/superpowers](https://github.com/obra/superpowers) v6.2.0, giấy phép MIT (xem `SUPERPOWERS-LICENSE`).
+### Quy trình và tiện ích riêng của dotagents — 10 skill
 
-Nằm trong `skills/` chứ không cài dưới dạng plugin, vì mục tiêu của repo là "đưa link cho agent bất kỳ trên máy bất kỳ là cài được": agent chạy `bash` thì gọi được `git clone`, chứ không gọi được `/plugin`. Codex vốn cũng không đọc plugin của Claude Code. Hệ quả:
+| Skill | Dùng để |
+|---|---|
+| [graphify](skills/graphify/SKILL.md) | Tạo hoặc truy vấn knowledge graph từ codebase hay bộ tài liệu; workflow chi tiết chọn theo agent. |
+| [map-subagent-workflow](skills/map-subagent-workflow/SKILL.md) | Xây hoặc sửa phòng, khu vực, level Unreal theo spatial spec, gồm asset, collision, ánh sáng và kiểm tra hình ảnh. |
+| [capturing-what-worked](skills/capturing-what-worked/SKILL.md) | Cân nhắc ghi lại bài học có ích sau khi task đã được kiểm chứng. |
+| [preserving-user-git-identity](skills/preserving-user-git-identity/SKILL.md) | Bảo toàn danh tính Git của người dùng và rà metadata trước commit hoặc push. |
+| [verifying-ui-with-playwright](skills/verifying-ui-with-playwright/SKILL.md) | Mở trình duyệt bằng Playwright để kiểm tra trực tiếp thay đổi giao diện. |
+| [no-clarify](skills/no-clarify/SKILL.md) | Thực hiện yêu cầu hiện tại trực tiếp mà không gửi commentary giải thích. Chỉ chạy khi gọi `$no-clarify`. |
+| [clear-conversation](skills/clear-conversation/SKILL.md) | Dọn các mục conversation log không còn ích lợi. Chỉ chạy khi gọi `$clear-conversation`. |
+| [compact-conversation](skills/compact-conversation/SKILL.md) | Gộp một dải conversation log liên tiếp thành bản compact. Chỉ chạy khi gọi `$compact-conversation`. |
+| [compacting-conversations](skills/compacting-conversations/SKILL.md) | Quy trình compact lịch sử hội thoại theo yêu cầu. Chỉ chạy khi người dùng yêu cầu compact rõ ràng. |
+| [output-skill](skills/output-skill/SKILL.md) | Tạo output dài đầy đủ, tránh placeholder hoặc cắt ngắn. Chỉ chạy khi gọi đích danh. |
 
-- Tiền tố `superpowers:` trong các tham chiếu chéo giữa skill đã bị bỏ — cài dạng skill thường thì tên là `writing-plans`, không phải `superpowers:writing-plans`.
-- Plugin `superpowers@claude-plugins-official` bị installer **tắt** trong `settings.json`, nếu không mỗi skill sẽ hiện hai lần.
-- Mất hook `SessionStart` của plugin (thứ nhồi sẵn `using-superpowers` vào đầu mỗi phiên). Thay vào đó `CLAUDE.md` / `AGENTS.md` có mục `# superpowers` đẩy agent chủ động đọc `using-superpowers` khi việc nhiều bước — rules cũng được nạp mỗi phiên nên tác dụng tương đương.
-- Không tự cập nhật theo marketplace. Lên bản mới: copy lại skill từ upstream vào `skills/` rồi `sed -i 's/superpowers://g'`.
+### Skill thiết kế giao diện — 4 skill opt-in
+
+Chỉ chạy khi người dùng gọi tên skill; nếu không, agent không tự chọn một phong cách trong nhóm này.
+
+| Skill | Dùng để |
+|---|---|
+| [taste-skill](skills/taste-skill/SKILL.md) | Thiết kế landing page, portfolio hoặc làm mới giao diện theo brief và design system phù hợp. |
+| [minimalist-skill](skills/minimalist-skill/SKILL.md) | Làm giao diện editorial tối giản với typography nổi bật và màu trầm. |
+| [brutalist-skill](skills/brutalist-skill/SKILL.md) | Tạo giao diện thô mộc, lưới cứng, tương phản mạnh và cảm giác Swiss print/terminal. |
+| [redesign-skill](skills/redesign-skill/SKILL.md) | Audit rồi nâng chất lượng website hoặc app đã có mà vẫn giữ chức năng. |
+
+### Profile viết prompt map — 2 skill chỉ dành cho Codex
+
+Hai profile dùng chung tiêu chí viết prompt map, khác model mục tiêu. Chúng chỉ chạy khi gọi đúng tên skill.
+
+| Skill | Dùng để |
+|---|---|
+| [writing-prompts-map-sol](skills/writing-prompts-map-sol/SKILL.md) | Viết hoặc cải thiện prompt xây map/game level, dành cho profile Sol. |
+| [writing-prompts-map-astra](skills/writing-prompts-map-astra/SKILL.md) | Viết hoặc cải thiện prompt xây map/game level, dành cho profile Astra. |
+
+Superpowers nằm trong `skills/` chứ không cài dưới dạng plugin, để agent bất kỳ có thể lấy repo và gọi skill. Các tham chiếu chéo dùng tên trần (`writing-plans`, không phải `superpowers:writing-plans`). Plugin Superpowers trùng lặp được installer tắt trong `settings.json`; các skill trong repo không tự cập nhật theo marketplace.
 
 ## Gọi skill viết prompt map (Codex)
 
