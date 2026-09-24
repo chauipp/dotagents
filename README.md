@@ -71,7 +71,7 @@ done
 Chỉ liệt kê thư mục có `.dotagents-manifest`, tức thư mục thật sự do dotagents cài — thư mục
 config của account khác trên cùng máy không lọt vào.
 
-Claude cài **28 skill**, còn Codex cài **30 skill**. Mỗi thư mục cài đặt phải có đúng 1 khối rules. Ra 2 khối là file đang chứa rules hai lần —
+Claude cài **27 skill**, còn Codex cài **29 skill**. Mỗi thư mục cài đặt phải có đúng 1 khối rules. Ra 2 khối là file đang chứa rules hai lần —
 xem mục [Lần đầu chạy trên máy đã có sẵn CLAUDE.md](#lần-đầu-chạy-trên-máy-đã-có-sẵn-claudemd).
 Không ra dòng nào là bước 1 chưa chạy được.
 
@@ -177,7 +177,7 @@ Với dự án cài per-project, thêm `--project /đường/dẫn/tới/project
 ## Cấu trúc
 
 ```
-skills/                30 skill ở một nguồn (27 dùng chung + graphify + 2 profile Codex)
+skills/                29 skill ở một nguồn (26 dùng chung + graphify + 2 profile Codex)
 claude/CLAUDE.md       rules bản Claude Code
 codex/AGENTS.md        rules bản Codex
 install.sh
@@ -192,9 +192,9 @@ Thêm agent mới sau này: thêm nhánh cài đặt tương ứng; metadata `ag
 
 ## Có gì bên trong
 
-**Rules** — mặc định trả lời tiếng Việt, quy định cách dùng quy trình Superpowers, yêu cầu worktree riêng cho task, kiểm UI trước khi báo xong, cách viết và hoàn tất plan, và các skill chỉ chạy khi người dùng gọi rõ.
+**Rules** — mặc định trả lời tiếng Việt; quy định cách dùng quy trình Superpowers, yêu cầu worktree riêng, kiểm UI, cách viết và hoàn tất plan, các skill opt-in, cùng checklist Git identity bắt buộc trước commit và push.
 
-**Skills** — 30 skill nằm trong `skills/`. Claude Code cài 28; Codex cài cả 30. Danh mục bên dưới được chia theo mục đích. Tên skill mở file `SKILL.md` tương ứng.
+**Skills** — 29 skill nằm trong `skills/`. Claude Code cài 27; Codex cài cả 29. Danh mục bên dưới được chia theo mục đích. Tên skill mở file `SKILL.md` tương ứng.
 
 ### Quy trình Superpowers — 14 skill
 
@@ -217,14 +217,13 @@ Các skill quy trình được lấy từ [obra/superpowers](https://github.com/
 | [finishing-a-development-branch](skills/finishing-a-development-branch/SKILL.md) | Hoàn tất nhánh sau khi kiểm tra đã đạt. |
 | [writing-skills](skills/writing-skills/SKILL.md) | Viết hoặc sửa skill và kiểm tra skill trước khi cài. |
 
-### Quy trình và tiện ích riêng của dotagents — 10 skill
+### Quy trình và tiện ích riêng của dotagents — 9 skill
 
 | Skill | Dùng để |
 |---|---|
 | [graphify](skills/graphify/SKILL.md) | Tạo hoặc truy vấn knowledge graph từ codebase hay bộ tài liệu; workflow chi tiết chọn theo agent. |
 | [map-subagent-workflow](skills/map-subagent-workflow/SKILL.md) | Xây hoặc sửa phòng, khu vực, level Unreal theo spatial spec, gồm asset, collision, ánh sáng và kiểm tra hình ảnh. |
 | [capturing-what-worked](skills/capturing-what-worked/SKILL.md) | Cân nhắc ghi lại bài học có ích sau khi task đã được kiểm chứng. |
-| [preserving-user-git-identity](skills/preserving-user-git-identity/SKILL.md) | Bảo toàn danh tính Git của người dùng và rà metadata trước commit hoặc push. |
 | [verifying-ui-with-playwright](skills/verifying-ui-with-playwright/SKILL.md) | Mở trình duyệt bằng Playwright để kiểm tra trực tiếp thay đổi giao diện. |
 | [no-clarify](skills/no-clarify/SKILL.md) | Thực hiện yêu cầu hiện tại trực tiếp mà không gửi commentary giải thích. Chỉ chạy khi gọi `$no-clarify`. |
 | [clear-conversation](skills/clear-conversation/SKILL.md) | Dọn các mục conversation log không còn ích lợi. Chỉ chạy khi gọi `$clear-conversation`. |

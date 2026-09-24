@@ -58,11 +58,12 @@ grep -q 'dotagents:begin' "$project/CLAUDE.md" || fail 'Project install did not 
 grep -q 'dotagents:begin' "$project/AGENTS.md" || fail 'Project install did not write Codex rules'
 assert_skill_set claude "$project/.claude/skills"
 assert_skill_set codex "$project/.codex/skills"
-[ -f "$KIT_DIR/skills/preserving-user-git-identity/SKILL.md" ] || fail "Missing Git identity skill"
-assert_file_equal "$KIT_DIR/skills/preserving-user-git-identity/SKILL.md" "$project/.claude/skills/preserving-user-git-identity/SKILL.md"
-assert_file_equal "$KIT_DIR/skills/preserving-user-git-identity/SKILL.md" "$project/.codex/skills/preserving-user-git-identity/SKILL.md"
-grep -q "preserving-user-git-identity" "$project/CLAUDE.md" || fail "Claude rules omit Git identity safeguard"
-grep -q "preserving-user-git-identity" "$project/AGENTS.md" || fail "Codex rules omit Git identity safeguard"
+[ ! -e "$KIT_DIR/skills/preserving-user-git-identity" ] || fail "Git identity skill should be removed"
+for rules_file in "$project/CLAUDE.md" "$project/AGENTS.md"; do
+  for required_rule in 'git config user.name' 'git config user.email' 'git diff --cached --check' 'git diff --cached' 'commit --author' 'release note' 'copyright' 'trailer' 'chỉ push khi người dùng đã cho phép'; do
+    grep -Fq "$required_rule" "$rules_file" || fail "Git identity rules omit '$required_rule' in $rules_file"
+  done
+done
 grep -q '^\.claude/skills/graphify/$' "$project/.gitignore" || fail 'Claude kit skills are not ignored'
 grep -q '^\.codex/skills/graphify/$' "$project/.gitignore" || fail 'Codex kit skills are not ignored'
 mkdir -p "$project/.claude/skills/project-only" "$project/.codex/skills/project-only"
