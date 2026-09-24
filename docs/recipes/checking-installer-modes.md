@@ -10,8 +10,8 @@ Lần theo cờ từ parser tới từng nhánh thực thi. Với mỗi mode, gh
 
 ## Cái bẫy
 
-Một cờ được parse đúng chưa có nghĩa là mọi mode đều tôn trọng nó. Global và project có các nhánh thực thi riêng; `--rules-only` trước đây chỉ ngăn copy skills ở project, còn global vẫn copy skills và chỉnh config.
+Một cờ được parse đúng chưa có nghĩa là mọi mode đều tôn trọng nó. Global và project có các nhánh thực thi riêng; `--rules-only` trước đây chỉ ngăn copy skills ở project, còn global vẫn copy skills và chỉnh config. Test rules cũng không nên cấm sự xuất hiện của một cụm từ chung: tài liệu có thể nhắc đến trigger để định nghĩa nó là opt-in. Kiểm tra cấu trúc hoặc điều kiện kích hoạt thực tế thay vì grep cấm cụm từ.
 
 ## Kiểm thế nào là đúng
 
-`bash tests/install.sh` phải xác nhận global `--codex --rules-only` tạo `AGENTS.md` nhưng không tạo `skills/` hoặc `config.toml`; các assertion project hiện có cũng phải tiếp tục qua.
+`bash tests/install.sh` phải xác nhận global `--codex --rules-only` tạo `AGENTS.md` nhưng không tạo `skills/` hoặc `config.toml`; các assertion project hiện có cũng phải tiếp tục qua. Khi rules chứa hướng dẫn trigger opt-in, installer vẫn phải giữ nguyên nội dung đó và test không được hiểu việc nhắc tới trigger là đang kích hoạt nó.
