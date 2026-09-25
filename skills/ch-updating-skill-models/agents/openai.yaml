@@ -1,0 +1,7 @@
+interface:
+  display_name: "CH Updating Skill Models"
+  short_description: "Audit and update Codex skill model assignments"
+  default_prompt: "Use $ch-updating-skill-models with a target skill to research current Codex models and propose model or reasoning updates."
+
+policy:
+  allow_implicit_invocation: false
