@@ -9,11 +9,11 @@ Chỉ viết/cải thiện prompt dựng map. Sản phẩm là một prompt hoà
 
 ## Model bắt buộc
 
-Chỉ dùng gpt-5.6-sol, gpt-5.6-terra, gpt-5.6-luna với reasoning không vượt xhigh. Cấm Astra và không fallback sang Astra. P yêu cầu Sol xhigh. Khi role Terra/Luna gặp vấn đề cần nâng cấp, parent có thể giao lại trong allowlist, tối đa Sol xhigh, ghi lý do. Không tự nâng mọi role lên Sol.
+Các worker chỉ dùng gpt-5.6-sol, gpt-5.6-terra, gpt-5.6-luna với reasoning không vượt xhigh; không dùng Astra làm worker hoặc tự fallback sang Astra. Parent tối thiểu là Sol xhigh theo gate bên dưới; nếu user xác nhận dùng parent cấp cao hơn thì chỉ parent được nâng, bảng worker vẫn giữ nguyên. Khi role Terra/Luna gặp vấn đề cần nâng cấp, parent có thể giao lại trong allowlist, tối đa Sol xhigh, ghi lý do. Không tự nâng mọi role lên Sol.
 
 | Role | Model ID | Reasoning |
 |---|---|---|
-| P | `gpt-5.6-sol` | `xhigh` |
+| P | `gpt-5.6-sol` minimum; higher tier only after user confirmation | `xhigh` |
 | S1 | `gpt-5.6-terra` | `medium` |
 | S2 | `gpt-5.6-terra` | `high` |
 | S3 | `gpt-5.6-sol` | `xhigh` |
@@ -25,7 +25,16 @@ Chỉ dùng gpt-5.6-sol, gpt-5.6-terra, gpt-5.6-luna với reasoning không vư�
 
 P=parent; S1=brief; S2=hình học/diện tích; S3=bố cục/giao thông; S4=nội thất; S5=mỹ thuật/kể chuyện; S6=khả năng triển khai; S7=review độc lập; W=kiểm kê cơ học tùy chọn.
 
-Kiểm model/effort đang chạy bằng metadata môi trường nếu được cung cấp. Skill không tự đổi parent. Nếu parent sai cấu hình, dừng trước pipeline và hướng dẫn user chọn đúng model/effort; không nhận đang dùng model mong muốn chỉ vì file ghi vậy. Nếu không xác minh được parent, yêu cầu user xác nhận cấu hình. Không đổi config global. Model/effort role không được tool hỗ trợ thì báo giới hạn, xin chọn cấu hình tương thích trong profile; không tự thay thế ngoài allowlist. Nếu không có cấu hình tương thích và user chưa chọn phương án khác, ghi BLOCKED_MODEL với role/model thiếu rồi dừng pipeline, không hỏi lặp hoặc giả đã chạy.
+### Parent model gate
+
+- Tối thiểu: `gpt-5.6-sol` ở `xhigh`.
+- So sánh theo credit dùng cho cùng lượng token vào/ra: `gpt-5.6-luna < gpt-5.6-terra < gpt-5.6-sol < gpt-6-astra`. Không xếp hạng theo tổng token phát sinh của một câu trả lời.
+- Xác minh model parent trước mọi bước pipeline.
+- Parent thấp hơn Sol, hoặc reasoning thấp hơn `xhigh`: dừng với `BLOCKED_MODEL`; không chạy một phần pipeline.
+- Parent cao hơn Sol: hỏi user có muốn dùng model đó không. Chỉ sau khi user đồng ý mới tiếp tục, và dùng model đã xác nhận cho mọi nhiệm vụ parent.
+- User từ chối: dừng và yêu cầu chuyển parent sang Sol. Không tự đổi model.
+- Không xác minh được model: block và yêu cầu user xác nhận/chọn parent.
+- Bảng role vẫn chi phối worker; nâng parent không tự nâng worker.
 
 Lời gọi skill cho phép parent giao subagent theo bảng. Đọc schema tool hiện có và truyền rõ model + reasoning; dùng context mới (với collaboration.spawn_agent: fork_turns="none", model=ID, reasoning_effort=effort). Gói task phải tự đủ dữ kiện. Không chạy subagent không chỉ định model rồi mặc định nó đúng profile. Không yêu cầu worker sinh đội con.
 

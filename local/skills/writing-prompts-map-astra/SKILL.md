@@ -9,11 +9,11 @@ Chỉ viết/cải thiện prompt dựng map. Sản phẩm là một prompt hoà
 
 ## Model bắt buộc
 
-P yêu cầu gpt-6-astra xhigh. S2/S3 dùng Astra high, S7 Astra xhigh; phần còn lại theo bảng. Không tự dùng max/ultra. Nếu thiếu Astra, báo và đề nghị user chọn writing-prompts-map-sol; không âm thầm đổi profile.
+Parent yêu cầu tối thiểu Astra xhigh; bảng dưới đây quy định model và reasoning của từng role. Không tự dùng max/ultra. Nếu parent được xác nhận ở model cao hơn Astra, chỉ parent được nâng; các worker vẫn dùng đúng model trong bảng.
 
 | Role | Model ID | Reasoning |
 |---|---|---|
-| P | `gpt-6-astra` | `xhigh` |
+| P | `gpt-6-astra` minimum; higher tier only after user confirmation | `xhigh` |
 | S1 | `gpt-5.6-terra` | `medium` |
 | S2 | `gpt-6-astra` | `high` |
 | S3 | `gpt-6-astra` | `high` |
@@ -25,7 +25,16 @@ P yêu cầu gpt-6-astra xhigh. S2/S3 dùng Astra high, S7 Astra xhigh; phần c
 
 P=parent; S1=brief; S2=hình học/diện tích; S3=bố cục/giao thông; S4=nội thất; S5=mỹ thuật/kể chuyện; S6=khả năng triển khai; S7=review độc lập; W=kiểm kê cơ học tùy chọn.
 
-Kiểm model/effort đang chạy bằng metadata môi trường nếu được cung cấp. Skill không tự đổi parent. Nếu parent sai cấu hình, dừng trước pipeline và hướng dẫn user chọn đúng model/effort; không nhận đang dùng model mong muốn chỉ vì file ghi vậy. Nếu không xác minh được parent, yêu cầu user xác nhận cấu hình. Không đổi config global. Model/effort role không được tool hỗ trợ thì báo giới hạn, xin chọn cấu hình tương thích trong profile; không tự thay thế ngoài allowlist. Nếu không có cấu hình tương thích và user chưa chọn phương án khác, ghi BLOCKED_MODEL với role/model thiếu rồi dừng pipeline, không hỏi lặp hoặc giả đã chạy.
+### Parent model gate
+
+- Tối thiểu: `gpt-6-astra` ở `xhigh`.
+- So sánh theo credit dùng cho cùng lượng token vào/ra: `gpt-5.6-luna < gpt-5.6-terra < gpt-5.6-sol < gpt-6-astra`. Không xếp hạng theo tổng token phát sinh của một câu trả lời.
+- Xác minh model parent trước mọi bước pipeline.
+- Parent thấp hơn Astra, hoặc reasoning thấp hơn `xhigh`: dừng với `BLOCKED_MODEL`; không chạy một phần pipeline.
+- Parent cao hơn Astra: hỏi user có muốn dùng model đó không. Chỉ sau khi user đồng ý mới tiếp tục, và dùng model đã xác nhận cho mọi nhiệm vụ parent.
+- User từ chối: dừng và yêu cầu chuyển parent sang Astra. Không tự đổi model.
+- Không xác minh được model: block và yêu cầu user xác nhận/chọn parent.
+- Không đổi config global. Model/effort role không được tool hỗ trợ thì báo giới hạn, xin chọn cấu hình tương thích trong profile; không tự thay thế ngoài allowlist. Nếu không có cấu hình tương thích và user chưa chọn phương án khác, ghi `BLOCKED_MODEL` với role/model thiếu rồi dừng pipeline, không hỏi lặp hoặc giả đã chạy.
 
 Lời gọi skill cho phép parent giao subagent theo bảng. Đọc schema tool hiện có và truyền rõ model + reasoning; dùng context mới (với collaboration.spawn_agent: fork_turns="none", model=ID, reasoning_effort=effort). Gói task phải tự đủ dữ kiện. Không chạy subagent không chỉ định model rồi mặc định nó đúng profile. Không yêu cầu worker sinh đội con.
 
