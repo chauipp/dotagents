@@ -222,7 +222,7 @@ Các skill quy trình được lấy từ [obra/superpowers](https://github.com/
 | Skill | Dùng để |
 |---|---|
 | [graphify](skills/graphify/SKILL.md) | Tạo hoặc truy vấn knowledge graph từ codebase hay bộ tài liệu; workflow chi tiết chọn theo agent. |
-| [ch-map-subagent-workflow](skills/ch-map-subagent-workflow/SKILL.md) | Xây hoặc sửa phòng, khu vực, level Unreal theo spatial spec, gồm asset, collision, ánh sáng và kiểm tra hình ảnh. |
+| [ch-build-map](skills/ch-build-map/SKILL.md) | Xây hoặc sửa phòng, khu vực, level Unreal theo spatial spec, gồm asset, collision, ánh sáng và kiểm tra hình ảnh. |
 | [ch-capturing-what-worked](skills/ch-capturing-what-worked/SKILL.md) | Cân nhắc ghi lại bài học có ích sau khi task đã được kiểm chứng. |
 | [ch-verifying-ui-with-playwright](skills/ch-verifying-ui-with-playwright/SKILL.md) | Mở trình duyệt bằng Playwright để kiểm tra trực tiếp thay đổi giao diện. |
 | [ch-no-clarify](skills/ch-no-clarify/SKILL.md) | Thực hiện yêu cầu hiện tại trực tiếp mà không gửi commentary giải thích. Chỉ chạy khi gọi `$ch-no-clarify`. |
