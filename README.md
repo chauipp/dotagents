@@ -50,7 +50,7 @@ Xử lý theo kết quả:
 
 | Thiếu | Hậu quả | Làm gì |
 |---|---|---|
-| `node` / `npx` | `verifying-ui-with-playwright` **không chạy được** — không có công cụ `browser_*` nào | Báo người dùng cài Node.js. Đừng tự cài bằng package manager hệ thống mà không hỏi |
+| `node` / `npx` | `ch-verifying-ui-with-playwright` **không chạy được** — không có công cụ `browser_*` nào | Báo người dùng cài Node.js. Đừng tự cài bằng package manager hệ thống mà không hỏi |
 | `chromium` | Playwright mở được server nhưng không có trình duyệt | `npx playwright install chromium` (vài trăm MB, cần mạng) |
 | `python3` | Installer đã không chạy nổi từ bước 1 | Báo người dùng |
 | `uv` | Không sao | Bỏ qua, `graphify` sẽ dùng `pip` |
@@ -222,13 +222,13 @@ Các skill quy trình được lấy từ [obra/superpowers](https://github.com/
 | Skill | Dùng để |
 |---|---|
 | [graphify](skills/graphify/SKILL.md) | Tạo hoặc truy vấn knowledge graph từ codebase hay bộ tài liệu; workflow chi tiết chọn theo agent. |
-| [map-subagent-workflow](skills/map-subagent-workflow/SKILL.md) | Xây hoặc sửa phòng, khu vực, level Unreal theo spatial spec, gồm asset, collision, ánh sáng và kiểm tra hình ảnh. |
-| [capturing-what-worked](skills/capturing-what-worked/SKILL.md) | Cân nhắc ghi lại bài học có ích sau khi task đã được kiểm chứng. |
-| [verifying-ui-with-playwright](skills/verifying-ui-with-playwright/SKILL.md) | Mở trình duyệt bằng Playwright để kiểm tra trực tiếp thay đổi giao diện. |
-| [no-clarify](skills/no-clarify/SKILL.md) | Thực hiện yêu cầu hiện tại trực tiếp mà không gửi commentary giải thích. Chỉ chạy khi gọi `$no-clarify`. |
-| [clear-conversation](skills/clear-conversation/SKILL.md) | Dọn các mục conversation log không còn ích lợi. Chỉ chạy khi gọi `$clear-conversation`. |
-| [compact-conversation](skills/compact-conversation/SKILL.md) | Gộp một dải conversation log liên tiếp thành bản compact. Chỉ chạy khi gọi `$compact-conversation`. |
-| [compacting-conversations](skills/compacting-conversations/SKILL.md) | Quy trình compact lịch sử hội thoại theo yêu cầu. Chỉ chạy khi người dùng yêu cầu compact rõ ràng. |
+| [ch-map-subagent-workflow](skills/ch-map-subagent-workflow/SKILL.md) | Xây hoặc sửa phòng, khu vực, level Unreal theo spatial spec, gồm asset, collision, ánh sáng và kiểm tra hình ảnh. |
+| [ch-capturing-what-worked](skills/ch-capturing-what-worked/SKILL.md) | Cân nhắc ghi lại bài học có ích sau khi task đã được kiểm chứng. |
+| [ch-verifying-ui-with-playwright](skills/ch-verifying-ui-with-playwright/SKILL.md) | Mở trình duyệt bằng Playwright để kiểm tra trực tiếp thay đổi giao diện. |
+| [ch-no-clarify](skills/ch-no-clarify/SKILL.md) | Thực hiện yêu cầu hiện tại trực tiếp mà không gửi commentary giải thích. Chỉ chạy khi gọi `$ch-no-clarify`. |
+| [ch-clear-conversation](skills/ch-clear-conversation/SKILL.md) | Dọn các mục conversation log không còn ích lợi. Chỉ chạy khi gọi `$ch-clear-conversation`. |
+| [ch-compact-conversation](skills/ch-compact-conversation/SKILL.md) | Gộp một dải conversation log liên tiếp thành bản compact. Chỉ chạy khi gọi `$ch-compact-conversation`. |
+| [ch-compacting-conversations](skills/ch-compacting-conversations/SKILL.md) | Quy trình compact lịch sử hội thoại theo yêu cầu. Chỉ chạy khi người dùng yêu cầu compact rõ ràng. |
 | [output-skill](skills/output-skill/SKILL.md) | Tạo output dài đầy đủ, tránh placeholder hoặc cắt ngắn. Chỉ chạy khi gọi đích danh. |
 
 ### Skill thiết kế giao diện — 4 skill opt-in
@@ -248,8 +248,8 @@ Hai profile dùng chung tiêu chí viết prompt map, khác model mục tiêu. C
 
 | Skill | Dùng để |
 |---|---|
-| [writing-prompts-map-sol](skills/writing-prompts-map-sol/SKILL.md) | Viết hoặc cải thiện prompt xây map/game level, dành cho profile Sol. |
-| [writing-prompts-map-astra](skills/writing-prompts-map-astra/SKILL.md) | Viết hoặc cải thiện prompt xây map/game level, dành cho profile Astra. |
+| [ch-writing-prompts-map-sol](skills/ch-writing-prompts-map-sol/SKILL.md) | Viết hoặc cải thiện prompt xây map/game level, dành cho profile Sol. |
+| [ch-writing-prompts-map-astra](skills/ch-writing-prompts-map-astra/SKILL.md) | Viết hoặc cải thiện prompt xây map/game level, dành cho profile Astra. |
 
 Superpowers nằm trong `skills/` chứ không cài dưới dạng plugin, để agent bất kỳ có thể lấy repo và gọi skill. Các tham chiếu chéo dùng tên trần (`writing-plans`, không phải `superpowers:writing-plans`). Plugin Superpowers trùng lặp được installer tắt trong `settings.json`; các skill trong repo không tự cập nhật theo marketplace.
 
@@ -260,13 +260,13 @@ Hai profile thay thế `writing-prompts` nằm trong `skills/` và được inst
 Chọn parent **Sol xhigh**, rồi gọi:
 
 ```text
-$writing-prompts-map-sol Dựa vào description và nguồn map, viết prompt hoàn thiện khu được giao đủ công năng, nội thất và tiêu chí nghiệm thu.
+$ch-writing-prompts-map-sol Dựa vào description và nguồn map, viết prompt hoàn thiện khu được giao đủ công năng, nội thất và tiêu chí nghiệm thu.
 ```
 
 Hoặc chọn parent **Astra xhigh**, rồi gọi:
 
 ```text
-$writing-prompts-map-astra Dựa vào description và nguồn map, viết prompt hoàn thiện khu được giao đủ công năng, nội thất và tiêu chí nghiệm thu.
+$ch-writing-prompts-map-astra Dựa vào description và nguồn map, viết prompt hoàn thiện khu được giao đủ công năng, nội thất và tiêu chí nghiệm thu.
 ```
 
 Skill chỉ viết prompt cho map; không dựng map hoặc viết prompt lĩnh vực khác. Metadata opt-in giúp user tự chọn profile. Skill không tự đổi model parent; thiếu model/công cụ phải báo đúng giới hạn. Bản Sol không gọi Astra, kể cả fallback. Không dùng max/ultra mặc định.

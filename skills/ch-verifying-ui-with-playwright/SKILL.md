@@ -1,5 +1,5 @@
 ---
-name: verifying-ui-with-playwright
+name: ch-verifying-ui-with-playwright
 description: Dùng khi một task có đụng tới thứ người dùng nhìn thấy trên trình duyệt — component, trang, CSS, form, luồng bấm — TRƯỚC khi báo là xong. Bắt mở trình duyệt thật bằng Playwright và xem tận mắt, thay vì suy ra từ việc code đã sửa đúng.
 ---
 
@@ -16,7 +16,7 @@ Chưa mở trình duyệt xem thì chưa được nói là xong.
 lint sạch — không cái nào chứng minh cái nút bấm được, cái modal đóng được, hay chữ không
 bị tràn ra ngoài khung.
 
-**Thông báo khi bắt đầu:** "Tôi dùng skill verifying-ui-with-playwright để kiểm giao diện."
+**Thông báo khi bắt đầu:** "Tôi dùng skill ch-verifying-ui-with-playwright để kiểm giao diện."
 
 ## Khi nào bắt buộc chạy
 

@@ -29,7 +29,7 @@
 
 # Kiểm UI trước khi báo xong
 - Task có đụng tới thứ người dùng nhìn thấy trên trình duyệt (component, trang, CSS, form,
-  luồng bấm) thì **bắt buộc** dùng skill `verifying-ui-with-playwright` trước khi nói là xong.
+  luồng bấm) thì **bắt buộc** dùng skill `ch-verifying-ui-with-playwright` trước khi nói là xong.
 - Test unit xanh không thay được việc mở trình duyệt xem tận mắt.
 - Không dựng được app thì nói thẳng là chưa kiểm được và nhờ người dùng xem giúp — không được
   báo xong.
@@ -37,9 +37,9 @@
 # Ghi lại cách làm đúng
 - **Đầu mỗi task, nếu repo có `docs/recipes/` thì `ls` nó trước.** Skill thì tự hiện trong danh
   sách, còn recipe nằm im — không chủ động nhìn thì viết ra cũng vô ích.
-- Làm xong một task VÀ đã kiểm chứng là đúng thì chạy skill `capturing-what-worked` để cân nhắc
+- Làm xong một task VÀ đã kiểm chứng là đúng thì chạy skill `ch-capturing-what-worked` để cân nhắc
   ghi lại. Nó có cổng chặn riêng, hầu hết task sẽ không đáng ghi — cứ để nó tự quyết.
-- Ba chỗ ghi, `capturing-what-worked` có cây quyết định đầy đủ:
+- Ba chỗ ghi, `ch-capturing-what-worked` có cây quyết định đầy đủ:
   - Đúng ở mọi dự án → `~/dotagents/skills/` rồi chạy `~/dotagents/install.sh`
   - Quy trình riêng của dự án này → `<dự án>/.claude/skills/<tên>/SKILL.md` (Claude) hoặc `<dự án>/.codex/skills/<tên>/SKILL.md` (Codex)
   - Kiến thức riêng của dự án này → `<dự án>/docs/recipes/<slug>.md`

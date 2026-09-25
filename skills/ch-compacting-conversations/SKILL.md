@@ -1,5 +1,5 @@
 ---
-name: compacting-conversations
+name: ch-compacting-conversations
 description: Use when the user explicitly asks to compact, condense, summarize-and-replace, or archive old conversation history in the current worktree.
 ---
 

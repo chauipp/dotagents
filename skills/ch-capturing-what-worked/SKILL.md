@@ -1,5 +1,5 @@
 ---
-name: capturing-what-worked
+name: ch-capturing-what-worked
 description: Dùng ngay sau khi một task đã làm xong VÀ đã kiểm chứng là đúng, để cân nhắc ghi lại cách làm cho lần sau. Chỉ ghi khi cách làm đúng KHÔNG phải là cách hiển nhiên — mục đích là chặn lần sau đi lại đúng cái ngõ cụt vừa đi.
 ---
 
@@ -14,7 +14,7 @@ dừng ở chỗ sai mà tưởng là đúng.
 Thứ đáng cứu **không phải cách làm đúng**. Cách làm đúng, đọc code là suy ra được. Thứ đáng
 cứu là **cái bẫy** — lý do cách hiển nhiên lại sai.
 
-**Thông báo khi bắt đầu:** "Tôi dùng skill capturing-what-worked để xem việc này có đáng ghi lại không."
+**Thông báo khi bắt đầu:** "Tôi dùng skill ch-capturing-what-worked để xem việc này có đáng ghi lại không."
 
 ## Cổng chặn — hầu hết task KHÔNG đáng ghi
 

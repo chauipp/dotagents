@@ -1,6 +1,6 @@
 ---
-name: no-clarify
-description: Use when the user explicitly invokes $no-clarify and wants the current request executed directly without explanatory commentary.
+name: ch-no-clarify
+description: Use when the user explicitly invokes $ch-no-clarify and wants the current request executed directly without explanatory commentary.
 ---
 
 # No Clarify
