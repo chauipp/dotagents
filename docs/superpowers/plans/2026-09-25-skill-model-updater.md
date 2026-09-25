@@ -221,7 +221,7 @@ Chạy lại đúng ba evaluator fresh-context của RED, lần này cung cấp 
 
 Đọc thủ công từng output. Nếu evaluator tìm được loophole, sửa tối thiểu câu chữ liên quan rồi chạy lại case đó cho tới khi hành vi hội tụ.
 
-- [ ] Task 3: Hoàn tất tài liệu, review và bàn giao
+- [x] Task 3: Hoàn tất tài liệu, review và bàn giao
 
 **Files:**
 
@@ -246,7 +246,7 @@ git diff
 
 Expected: không lỗi whitespace; diff chỉ chứa skill và tài liệu của task.
 
-- [ ] **Step 2: Tick task ngay khi từng gate pass**
+- [x] **Step 2: Tick task ngay khi từng gate pass**
 
 Đổi heading Task 1, Task 2 và Task 3 từ `- [ ]` sang `- [x]` ngay sau khi task tương ứng hoàn tất và được review.
 
@@ -275,7 +275,7 @@ git diff --check
 
 Expected: bản chuẩn hóa pass validator, installer pass, diff check pass; bản thật giữ `agents: codex` và chỉ có khác biệt schema đã ghi nhận.
 
-- [ ] **Step 5: Commit sau khi kiểm identity và staged diff**
+- [x] **Step 5: Commit sau khi kiểm identity và staged diff**
 
 Trước commit chạy và đọc đầy đủ:
 
