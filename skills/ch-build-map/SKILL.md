@@ -1,5 +1,5 @@
 ---
-name: ch-map-subagent-workflow
+name: ch-build-map
 description: Use when building or editing an Unreal Engine room, sector, or level from a detailed spatial specification, especially with UE/Blender assets, shared .umap files, collision, physical mounting, lighting, or visual QA.
 ---
 
@@ -13,7 +13,7 @@ This skill cannot change the parent model. When the runtime exposes the parent i
 
 ## Automatic quality-first routing
 
-`$ch-map-subagent-workflow` has no positional model arguments. On every invocation, assign only the roles actually needed using this table:
+`$ch-build-map` has no positional model arguments. On every invocation, assign only the roles actually needed using this table:
 
 | Role | Model | Reasoning | Ownership |
 |---|---|---|---|
