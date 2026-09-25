@@ -1,6 +1,6 @@
 ---
-name: compact-conversation
-description: Use when the user explicitly invokes $compact-conversation to condense a contiguous range of conversation logs in the current worktree.
+name: ch-compact-conversation
+description: Use when the user explicitly invokes $ch-compact-conversation to condense a contiguous range of conversation logs in the current worktree.
 ---
 
 # Compact Conversation

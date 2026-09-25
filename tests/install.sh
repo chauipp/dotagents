@@ -124,14 +124,14 @@ grep -qx 'global skill' "$global_claude/skills/brainstorming/SKILL.md" \
   || fail 'Global collision changed the custom skill'
 
 # Prompt-map profiles are in the canonical catalog and only installed for Codex.
-for name in writing-prompts-map-sol writing-prompts-map-astra; do
+for name in ch-writing-prompts-map-sol ch-writing-prompts-map-astra; do
   [ -f "$KIT_DIR/skills/$name/SKILL.md" ] || fail "Missing Codex profile: $name"
   grep -qxF "$name" "$project/.codex/skills/.dotagents-manifest" || fail "Codex profile not installed: $name"
   if grep -qxF "$name" "$project/.claude/skills/.dotagents-manifest"; then fail "Codex profile leaked into Claude: $name"; fi
 done
-cmp "$KIT_DIR/skills/writing-prompts-map-sol/references/workflow.md" \
-  "$KIT_DIR/skills/writing-prompts-map-astra/references/workflow.md" || fail 'Profile workflow drift'
-cmp "$KIT_DIR/skills/writing-prompts-map-sol/references/roles.md" \
-  "$KIT_DIR/skills/writing-prompts-map-astra/references/roles.md" || fail 'Profile role drift'
+cmp "$KIT_DIR/skills/ch-writing-prompts-map-sol/references/workflow.md" \
+  "$KIT_DIR/skills/ch-writing-prompts-map-astra/references/workflow.md" || fail 'Profile workflow drift'
+cmp "$KIT_DIR/skills/ch-writing-prompts-map-sol/references/roles.md" \
+  "$KIT_DIR/skills/ch-writing-prompts-map-astra/references/roles.md" || fail 'Profile role drift'
 
 echo 'PASS: installer preserves custom skills, detects collisions, and supports dry-run checks'

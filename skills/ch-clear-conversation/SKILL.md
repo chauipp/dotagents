@@ -1,6 +1,6 @@
 ---
-name: clear-conversation
-description: Use when the user explicitly invokes $clear-conversation to remove obsolete conversation log entries from the current worktree.
+name: ch-clear-conversation
+description: Use when the user explicitly invokes $ch-clear-conversation to remove obsolete conversation log entries from the current worktree.
 ---
 
 # Clear Conversation

@@ -4,8 +4,8 @@ Hai skill nằm trong danh mục canonical `skills/` và có metadata `agents: c
 
 | Skill | Parent cần chọn | Cách gọi |
 |---|---|---|
-| writing-prompts-map-sol | gpt-5.6-sol / xhigh | `$writing-prompts-map-sol <yêu cầu map>` |
-| writing-prompts-map-astra | gpt-6-astra / xhigh | `$writing-prompts-map-astra <yêu cầu map>` |
+| ch-writing-prompts-map-sol | gpt-5.6-sol / xhigh | `$ch-writing-prompts-map-sol <yêu cầu map>` |
+| ch-writing-prompts-map-astra | gpt-6-astra / xhigh | `$ch-writing-prompts-map-astra <yêu cầu map>` |
 
 Chọn parent Sol xhigh hoặc Astra xhigh, rồi gọi profile tương ứng. Skill chỉ viết prompt cho map; không dựng map hoặc viết prompt lĩnh vực khác. Metadata opt-in giúp user tự chọn profile. Skill không tự đổi model parent; thiếu model/công cụ phải báo đúng giới hạn. Bản Sol không gọi Astra, kể cả fallback. Không dùng max/ultra mặc định.
 

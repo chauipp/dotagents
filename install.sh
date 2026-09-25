@@ -219,7 +219,7 @@ copy_skills() {
 
 # Skill do dotagents cài là bản sao, commit vào repo dự án là tự đẻ một nhánh sẽ
 # lệch dần và không ai nhớ cập nhật. Nhưng KHÔNG ignore cả .claude/skills/ được:
-# skill riêng của dự án (capturing-what-worked sinh ra) phải đi theo git thì đồng
+# skill riêng của dự án (ch-capturing-what-worked sinh ra) phải đi theo git thì đồng
 # đội clone về mới có. Nên liệt kê đích danh từng tên trong manifest, và ghi lại
 # cả khối mỗi lần cài để danh sách không bị cũ.
 ignore_kit_skills() {
@@ -285,7 +285,7 @@ PY
 }
 
 # Khai MCP server playwright cho Claude Code. Không có nó thì skill
-# verifying-ui-with-playwright nằm đó mà không có công cụ browser_* nào để chạy.
+# ch-verifying-ui-with-playwright nằm đó mà không có công cụ browser_* nào để chạy.
 add_playwright_claude() {
   local f="$1/.claude.json"
   [ -f "$f" ] || echo '{}' > "$f"
@@ -379,7 +379,7 @@ import json,sys,os
 p=os.path.expanduser('$CLAUDE_DIR/.claude.json')
 sys.exit(0 if os.path.exists(p) and 'playwright' in json.load(open(p)).get('mcpServers',{}) else 1)
 " 2>/dev/null; then
-        echo "  ! Máy chưa khai MCP playwright, nên skill verifying-ui-with-playwright sẽ không" >&2
+        echo "  ! Máy chưa khai MCP playwright, nên skill ch-verifying-ui-with-playwright sẽ không" >&2
         echo "    có công cụ browser_* nào để gọi. Chạy '$0 --claude' để khai (cấp máy)." >&2
       fi
     fi
