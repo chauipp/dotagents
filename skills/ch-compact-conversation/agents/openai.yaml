@@ -1,0 +1,7 @@
+interface:
+  display_name: "ch-compact-conversation"
+  short_description: "Condense contiguous conversation logs safely"
+  default_prompt: "Use $ch-compact-conversation to condense a contiguous range of conversation logs."
+
+policy:
+  allow_implicit_invocation: false

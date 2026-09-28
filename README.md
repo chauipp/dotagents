@@ -2,7 +2,7 @@
 
 Rules + skills dùng chung cho các coding agent. Clone về máy nào, dự án nào cũng cài được trong một lệnh.
 
-Hiện hỗ trợ **Claude Code** và **Codex**. Hai bên đọc cùng một định dạng `SKILL.md`, nên `shared/skills/` phục vụ được cả hai mà không cần chuyển đổi.
+Hiện hỗ trợ **Claude Code** và **Codex**. Hai bên đọc cùng một định dạng `SKILL.md`, nên `skills/` là nguồn duy nhất, còn metadata trong từng `SKILL.md` giới hạn skill theo agent khi cần.
 
 ## Cho agent đọc
 
@@ -50,7 +50,7 @@ Xử lý theo kết quả:
 
 | Thiếu | Hậu quả | Làm gì |
 |---|---|---|
-| `node` / `npx` | `verifying-ui-with-playwright` **không chạy được** — không có công cụ `browser_*` nào | Báo người dùng cài Node.js. Đừng tự cài bằng package manager hệ thống mà không hỏi |
+| `node` / `npx` | `ch-verifying-ui-with-playwright` **không chạy được** — không có công cụ `browser_*` nào | Báo người dùng cài Node.js. Đừng tự cài bằng package manager hệ thống mà không hỏi |
 | `chromium` | Playwright mở được server nhưng không có trình duyệt | `npx playwright install chromium` (vài trăm MB, cần mạng) |
 | `python3` | Installer đã không chạy nổi từ bước 1 | Báo người dùng |
 | `uv` | Không sao | Bỏ qua, `graphify` sẽ dùng `pip` |
@@ -71,7 +71,7 @@ done
 Chỉ liệt kê thư mục có `.dotagents-manifest`, tức thư mục thật sự do dotagents cài — thư mục
 config của account khác trên cùng máy không lọt vào.
 
-Mỗi thư mục phải ra **28 skill và đúng 1 khối rules**. Ra 2 khối là file đang chứa rules hai lần —
+Claude cài **27 skill**, còn Codex cài **29 skill**. Mỗi thư mục cài đặt phải có đúng 1 khối rules. Ra 2 khối là file đang chứa rules hai lần —
 xem mục [Lần đầu chạy trên máy đã có sẵn CLAUDE.md](#lần-đầu-chạy-trên-máy-đã-có-sẵn-claudemd).
 Không ra dòng nào là bước 1 chưa chạy được.
 
@@ -101,6 +101,8 @@ Chỉ định rõ nếu muốn:
 ./install.sh --claude
 ./install.sh --codex
 ./install.sh --all
+./install.sh --codex --rules-only  # chỉ cập nhật rules Codex, không cài skills/config
+./install.sh --all --rules-only   # chỉ cập nhật rules của cả hai agent
 ```
 
 Dùng config dir khác mặc định:
@@ -117,11 +119,23 @@ cd ~/duong/dan/du-an
 ~/dotagents/install.sh --project
 ```
 
-Ghi rules vào `CLAUDE.md` + `AGENTS.md`; cài 28 skill của Claude Code vào `.claude/skills/` và 28 skill đúng biến thể của Codex vào `.codex/skills/`.
+Mặc định, lệnh này ghi rules và cài skills cho cả Claude Code (`CLAUDE.md`, `.claude/skills/`) lẫn Codex (`AGENTS.md`, `.codex/skills/`). Muốn chỉ cài một agent, thêm selector:
 
-**Skills không đi vào git.** Installer ghi một khối vào `.gitignore` liệt kê đích danh cả hai bộ 28 skill, nên `git add -A` không kéo bản sao kit theo. Đồng đội chỉ cần chạy `install.sh --project` để có cùng bộ skill.
+```bash
+~/dotagents/install.sh --project /đường/dẫn/tới/project --codex
+~/dotagents/install.sh --project /đường/dẫn/tới/project --claude
+```
 
-Khối đó chỉ chặn tên skill của kit trong `.claude/skills/` và `.codex/skills/`. Skill bạn tự viết cho dự án (ví dụ `.claude/skills/deploy-staging/`) vẫn commit bình thường.
+`--codex` chỉ đụng tới rules Codex và `.codex/skills/`; `--claude` chỉ đụng tới rules Claude Code và `.claude/skills/`. Dùng `--all` để ghi rõ muốn cài cả hai. Các selector cũng kết hợp được với `--check` để kiểm tra trước và `--rules-only` để chỉ ghi rules:
+
+```bash
+~/dotagents/install.sh --check --project /đường/dẫn/tới/project --codex
+~/dotagents/install.sh --project /đường/dẫn/tới/project --claude --rules-only
+```
+
+**Skills không đi vào git.** Installer ghi một khối vào `.gitignore` liệt kê đích danh skill dotagents đã cài, nên `git add -A` không kéo bản sao kit theo. Đồng đội chỉ cần chạy `install.sh --project` để có cùng bộ skill.
+
+Khối đó chỉ chặn tên skill của kit trong thư mục skills được cài. Skill bạn tự viết cho dự án (ví dụ `.claude/skills/deploy-staging/`) vẫn commit bình thường.
 
 Chỉ muốn rules, khỏi cần thư mục skills trong dự án:
 
@@ -138,7 +152,7 @@ Luôn kiểm tra trước khi cài:
 ~/dotagents/install.sh --project /đường/dẫn/tới/project
 ```
 
-`--check` không tạo, sửa hay xóa file. Nếu skill kit trùng tên với một skill đã có nhưng tên đó không nằm trong `.dotagents-manifest`, installer báo collision và dừng trước khi sửa rules, skills hay `.gitignore`. Đổi tên/di chuyển skill riêng hoặc quyết định thủ công cách xử lý rồi mới chạy lại; installer không tự ghi đè collision.
+`--check` không tạo, sửa hay xóa file. Nếu skill kit trùng tên với một skill đã có nhưng tên đó không nằm trong `.dotagents-manifest`, installer chỉ nhận bản trùng khớp chính xác với danh mục kit; nếu nội dung khác, nó báo collision và dừng trước khi sửa rules, skills hay `.gitignore`. Cách này nhận lại an toàn các profile map từng được chép thủ công theo hướng dẫn cũ. Đổi tên/di chuyển skill riêng hoặc quyết định thủ công cách xử lý rồi mới chạy lại; installer không tự ghi đè collision.
 
 Skill kit đã có trong manifest được cập nhật bình thường. Skill riêng tên khác, rules nằm ngoài marker dotagents, và mọi rule `.gitignore` nằm ngoài block dotagents đều được giữ nguyên.
 
@@ -163,62 +177,96 @@ Với dự án cài per-project, thêm `--project /đường/dẫn/tới/project
 ## Cấu trúc
 
 ```
-local/skills/          2 skill viết prompt map, chỉ cài local theo hướng dẫn local/README.md
-shared/skills/         27 skill giống nhau ở mọi agent (5 thiết kế + 14 superpowers + 8 tự viết)
+skills/                29 skill ở một nguồn (26 dùng chung + graphify + 2 profile Codex)
 claude/CLAUDE.md       rules bản Claude Code
-claude/skills/         skill riêng cho Claude Code (graphify)
 codex/AGENTS.md        rules bản Codex
-codex/skills/          skill riêng cho Codex (graphify)
 install.sh
 SUPERPOWERS-LICENSE    MIT, cho 14 skill copy từ obra/superpowers
 ```
 
-Installer copy `shared/skills/` trước, rồi chồng `<agent>/skills/` lên đè. Hầu hết skill chỉ là văn bản nên dùng chung được; skill nào **gọi tool cụ thể** thì phải tách bản.
+Installer quét `skills/` và cài vào thư mục đích của từng agent. Mặc định skill áp dụng cho cả Claude Code và Codex; có thể khai báo `agents: codex` trong frontmatter để giới hạn profile map cho Codex. Hai profile map vì thế được cài cả global lẫn project khi chọn Codex.
 
-Hiện chỉ `graphify` cần tách: bản Claude Code dispatch subagent bằng Agent tool (`subagent_type="general-purpose"`), bản Codex dùng `spawn_agent`/`wait_agent`/`close_agent` và cần `multi_agent = true` trong `~/.codex/config.toml`. Cài nhầm bản là skill hỏng, nên đừng gộp chúng vào `shared/`.
+Graphify là một thư mục skill duy nhất với `SKILL.md` điều phối và các workflow riêng tại `references/claude/` và `references/codex/`; tài liệu tham chiếu giống nhau chỉ lưu một bản dưới `references/`.
 
-Thêm agent mới sau này: thêm một thư mục `<agent>/` chứa file rules (+ `skills/` nếu cần bản riêng) và một nhánh trong `install.sh`.
+Thêm agent mới sau này: thêm nhánh cài đặt tương ứng; metadata `agents` xác định skill nào hỗ trợ agent đó.
 
 ## Có gì bên trong
 
-**Rules** — luôn trả lời tiếng Việt, đẩy agent chủ động dùng superpowers, danh sách skill opt-in, mặc định mỗi task một worktree (tuyên bố sẵn để `using-git-worktrees` khỏi hỏi), bắt kiểm UI trước khi báo xong, quy tắc checkbox cho từng task trong plan, quy tắc viết summary khi plan hoàn tất kèm chuỗi trỏ nhau spec ↔ plan ↔ summary.
+**Rules** — mặc định trả lời tiếng Việt; quy định cách dùng quy trình Superpowers, yêu cầu worktree riêng, kiểm UI, cách viết và hoàn tất plan, các skill opt-in, cùng checklist Git identity bắt buộc trước commit và push.
 
-**Skills** — 28 skill, trong đó 13 skill dưới đây:
+**Skills** — 29 skill nằm trong `skills/`. Claude Code cài 27; Codex cài cả 29. Danh mục bên dưới được chia theo mục đích. Tên skill mở file `SKILL.md` tương ứng.
 
-- `graphify` — biến mọi input thành knowledge graph
-- Tự viết: `verifying-ui-with-playwright` (bắt kiểm UI bằng trình duyệt thật trước khi báo xong), `capturing-what-worked` (ghi lại cách làm đúng vào `docs/recipes/` để lần sau khỏi mò lại), `compacting-conversations` (tóm tắt và thay thế an toàn các dải chat cũ liên tiếp), `no-clarify` (thực hiện trực tiếp không gửi commentary), `clear-conversation` (dọn log chat không còn hữu ích), `compact-conversation` (thu gọn một dải log chat liên tiếp), `map-subagent-workflow` (quy trình phối hợp agent xây dựng map Unreal theo spatial spec chi tiết)
-- Frontend/UI: `taste-skill`, `minimalist-skill`, `brutalist-skill`, `redesign-skill`
-- Khác: `output-skill`
+### Quy trình Superpowers — 14 skill
 
-Skill thiết kế đều **opt-in** — chỉ chạy khi gọi đích danh (`$taste-skill`, `$redesign-skill`…).
+Các skill quy trình được lấy từ [obra/superpowers](https://github.com/obra/superpowers) v6.2.0, giấy phép MIT (xem `SUPERPOWERS-LICENSE`). Chúng được cài như skill thường, không phải plugin.
 
-Ba workflow `no-clarify`, `clear-conversation` và `compact-conversation` cũng chỉ chạy khi
-người dùng gọi rõ bằng giao diện skill `$no-clarify`, `$clear-conversation` hoặc
-`$compact-conversation`; `/skills` chỉ dùng để chọn skill khi agent hỗ trợ selector đó.
+| Skill | Dùng để |
+|---|---|
+| [using-superpowers](skills/using-superpowers/SKILL.md) | Tra mục lục và chọn quy trình phù hợp trước khi bắt đầu task. |
+| [brainstorming](skills/brainstorming/SKILL.md) | Làm rõ mục tiêu và thiết kế trước khi tạo tính năng hoặc đổi hành vi. |
+| [writing-plans](skills/writing-plans/SKILL.md) | Lập kế hoạch thực hiện từ yêu cầu hoặc spec nhiều bước. |
+| [executing-plans](skills/executing-plans/SKILL.md) | Thực hiện plan có sẵn theo các checkpoint. |
+| [subagent-driven-development](skills/subagent-driven-development/SKILL.md) | Chia task độc lập trong plan cho subagent và rà soát kết quả. |
+| [dispatching-parallel-agents](skills/dispatching-parallel-agents/SKILL.md) | Chia các việc độc lập có thể chạy song song cho nhiều agent. |
+| [test-driven-development](skills/test-driven-development/SKILL.md) | Viết test trước, xác nhận test đỏ, rồi triển khai thay đổi tối thiểu. |
+| [systematic-debugging](skills/systematic-debugging/SKILL.md) | Tìm nguyên nhân gốc của bug hoặc test lỗi trước khi sửa. |
+| [verification-before-completion](skills/verification-before-completion/SKILL.md) | Chạy kiểm tra và xác nhận bằng chứng trước khi nói task đã xong. |
+| [requesting-code-review](skills/requesting-code-review/SKILL.md) | Yêu cầu review khi hoàn tất thay đổi lớn hoặc trước khi merge. |
+| [receiving-code-review](skills/receiving-code-review/SKILL.md) | Đánh giá feedback review trước khi áp dụng. |
+| [using-git-worktrees](skills/using-git-worktrees/SKILL.md) | Tạo và chuẩn bị worktree riêng cho task. |
+| [finishing-a-development-branch](skills/finishing-a-development-branch/SKILL.md) | Hoàn tất nhánh sau khi kiểm tra đã đạt. |
+| [writing-skills](skills/writing-skills/SKILL.md) | Viết hoặc sửa skill và kiểm tra skill trước khi cài. |
 
-**superpowers** — 14 skill quy trình (`brainstorming`, `writing-plans`, `executing-plans`, `subagent-driven-development`, `test-driven-development`, `systematic-debugging`…), copy từ [obra/superpowers](https://github.com/obra/superpowers) v6.2.0, giấy phép MIT (xem `SUPERPOWERS-LICENSE`).
+### Quy trình và tiện ích riêng của dotagents — 9 skill
 
-Nằm trong `shared/skills/` chứ không cài dưới dạng plugin, vì mục tiêu của repo là "đưa link cho agent bất kỳ trên máy bất kỳ là cài được": agent chạy `bash` thì gọi được `git clone`, chứ không gọi được `/plugin`. Codex vốn cũng không đọc plugin của Claude Code. Hệ quả:
+| Skill | Dùng để |
+|---|---|
+| [graphify](skills/graphify/SKILL.md) | Tạo hoặc truy vấn knowledge graph từ codebase hay bộ tài liệu; workflow chi tiết chọn theo agent. |
+| [ch-build-map](skills/ch-build-map/SKILL.md) | Xây hoặc sửa phòng, khu vực, level Unreal theo spatial spec, gồm asset, collision, ánh sáng và kiểm tra hình ảnh. |
+| [ch-capturing-what-worked](skills/ch-capturing-what-worked/SKILL.md) | Cân nhắc ghi lại bài học có ích sau khi task đã được kiểm chứng. |
+| [ch-verifying-ui-with-playwright](skills/ch-verifying-ui-with-playwright/SKILL.md) | Mở trình duyệt bằng Playwright để kiểm tra trực tiếp thay đổi giao diện. |
+| [ch-no-clarify](skills/ch-no-clarify/SKILL.md) | Thực hiện yêu cầu hiện tại trực tiếp mà không gửi commentary giải thích. Chỉ chạy khi gọi `$ch-no-clarify`. |
+| [ch-clear-conversation](skills/ch-clear-conversation/SKILL.md) | Dọn các mục conversation log không còn ích lợi. Chỉ chạy khi gọi `$ch-clear-conversation`. |
+| [ch-compact-conversation](skills/ch-compact-conversation/SKILL.md) | Gộp một dải conversation log liên tiếp thành bản compact. Chỉ chạy khi gọi `$ch-compact-conversation`. |
+| [ch-compacting-conversations](skills/ch-compacting-conversations/SKILL.md) | Quy trình compact lịch sử hội thoại theo yêu cầu. Chỉ chạy khi người dùng yêu cầu compact rõ ràng. |
+| [output-skill](skills/output-skill/SKILL.md) | Tạo output dài đầy đủ, tránh placeholder hoặc cắt ngắn. Chỉ chạy khi gọi đích danh. |
 
-- Tiền tố `superpowers:` trong các tham chiếu chéo giữa skill đã bị bỏ — cài dạng skill thường thì tên là `writing-plans`, không phải `superpowers:writing-plans`.
-- Plugin `superpowers@claude-plugins-official` bị installer **tắt** trong `settings.json`, nếu không mỗi skill sẽ hiện hai lần.
-- Mất hook `SessionStart` của plugin (thứ nhồi sẵn `using-superpowers` vào đầu mỗi phiên). Thay vào đó `CLAUDE.md` / `AGENTS.md` có mục `# superpowers` đẩy agent chủ động đọc `using-superpowers` khi việc nhiều bước — rules cũng được nạp mỗi phiên nên tác dụng tương đương.
-- Không tự cập nhật theo marketplace. Lên bản mới: copy lại `skills/` từ upstream vào `shared/skills/` rồi `sed -i 's/superpowers://g'`.
+### Skill thiết kế giao diện — 4 skill opt-in
 
-## Gọi skill viết prompt map (chỉ local)
+Chỉ chạy khi người dùng gọi tên skill; nếu không, agent không tự chọn một phong cách trong nhóm này.
 
-Hai skill thay thế `writing-prompts` nằm ở `local/skills/`, ngoài bộ 28 skill của installer. Chúng có cùng hợp đồng vai trò và tiêu chí chất lượng, chỉ khác model. `install.sh` global hoặc project đều không tự cài hai profile này; xem [cách cài local](local/README.md).
+| Skill | Dùng để |
+|---|---|
+| [taste-skill](skills/taste-skill/SKILL.md) | Thiết kế landing page, portfolio hoặc làm mới giao diện theo brief và design system phù hợp. |
+| [minimalist-skill](skills/minimalist-skill/SKILL.md) | Làm giao diện editorial tối giản với typography nổi bật và màu trầm. |
+| [brutalist-skill](skills/brutalist-skill/SKILL.md) | Tạo giao diện thô mộc, lưới cứng, tương phản mạnh và cảm giác Swiss print/terminal. |
+| [redesign-skill](skills/redesign-skill/SKILL.md) | Audit rồi nâng chất lượng website hoặc app đã có mà vẫn giữ chức năng. |
+
+### Profile viết prompt map — 2 skill chỉ dành cho Codex
+
+Hai profile dùng chung tiêu chí viết prompt map, khác model mục tiêu. Chúng chỉ chạy khi gọi đúng tên skill.
+
+| Skill | Dùng để |
+|---|---|
+| [ch-writing-prompts-map-sol](skills/ch-writing-prompts-map-sol/SKILL.md) | Viết hoặc cải thiện prompt xây map/game level, dành cho profile Sol. |
+| [ch-writing-prompts-map-astra](skills/ch-writing-prompts-map-astra/SKILL.md) | Viết hoặc cải thiện prompt xây map/game level, dành cho profile Astra. |
+
+Superpowers nằm trong `skills/` chứ không cài dưới dạng plugin, để agent bất kỳ có thể lấy repo và gọi skill. Các tham chiếu chéo dùng tên trần (`writing-plans`, không phải `superpowers:writing-plans`). Plugin Superpowers trùng lặp được installer tắt trong `settings.json`; các skill trong repo không tự cập nhật theo marketplace.
+
+## Gọi skill viết prompt map (Codex)
+
+Hai profile thay thế `writing-prompts` nằm trong `skills/` và được installer cài tự động khi chọn Codex, ở cả phạm vi global lẫn project. Chúng có cùng hợp đồng vai trò và tiêu chí chất lượng, chỉ khác model. Xem [chi tiết hai profile](local/README.md).
 
 Chọn parent **Sol xhigh**, rồi gọi:
 
 ```text
-$writing-prompts-map-sol Dựa vào description và nguồn map, viết prompt hoàn thiện khu được giao đủ công năng, nội thất và tiêu chí nghiệm thu.
+$ch-writing-prompts-map-sol Dựa vào description và nguồn map, viết prompt hoàn thiện khu được giao đủ công năng, nội thất và tiêu chí nghiệm thu.
 ```
 
 Hoặc chọn parent **Astra xhigh**, rồi gọi:
 
 ```text
-$writing-prompts-map-astra Dựa vào description và nguồn map, viết prompt hoàn thiện khu được giao đủ công năng, nội thất và tiêu chí nghiệm thu.
+$ch-writing-prompts-map-astra Dựa vào description và nguồn map, viết prompt hoàn thiện khu được giao đủ công năng, nội thất và tiêu chí nghiệm thu.
 ```
 
 Skill chỉ viết prompt cho map; không dựng map hoặc viết prompt lĩnh vực khác. Metadata opt-in giúp user tự chọn profile. Skill không tự đổi model parent; thiếu model/công cụ phải báo đúng giới hạn. Bản Sol không gọi Astra, kể cả fallback. Không dùng max/ultra mặc định.
@@ -237,7 +285,7 @@ Nếu phần cũ **trùng tiêu đề mục** với rules mới, installer sẽ 
 
 ## Cập nhật bộ kit
 
-Sửa `claude/CLAUDE.md`, `codex/AGENTS.md` hoặc `shared/skills/`, commit, push. Máy khác `git pull && ./install.sh`.
+Sửa `claude/CLAUDE.md`, `codex/AGENTS.md` hoặc `skills/`, commit, push. Máy khác `git pull && ./install.sh`.
 
 ## Máy mới cần gì thêm
 
