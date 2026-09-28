@@ -7,9 +7,16 @@ description: Use when building or editing an Unreal Engine room, sector, or leve
 
 ## Core contract
 
-The Sol parent is the design authority, contract owner, and final visual gate. Workers receive bounded deliverables. Exactly one final-map builder writes the target `.umap`; no other agent edits it concurrently.
+The confirmed parent (minimum GPT-5.6 Sol) is the design authority, contract owner, and final visual gate. Workers receive bounded deliverables. Exactly one final-map builder writes the target `.umap`; no other agent edits it concurrently.
 
-This skill cannot change the parent model. When the runtime exposes the parent identity, require `gpt-5.6-sol` at `xhigh`; otherwise disclose that the parent model could not be verified. Never claim that this skill upgraded the parent.
+### Parent model gate
+
+- Minimum: `gpt-5.6-sol` at `xhigh`.
+- Compare model tiers by credit cost for the same input/output token counts, not by the variable total tokens in one response. For the models in this skill, the order is `gpt-5.6-luna < gpt-5.6-terra < gpt-5.6-sol < gpt-6-astra`.
+- Verify the runtime parent before planning, reading project assets, or dispatching workers.
+- If the parent is below Sol, or its reasoning is below `xhigh`, return `BLOCKED_MODEL` and do not start any part of the workflow.
+- If the parent is above Sol, ask whether the user wants to use it. Continue only after confirmation; use the confirmed model at `xhigh` for all parent duties in this invocation.
+- If the user declines, stop and ask them to switch to Sol. Never change the runtime model yourself.
 
 ## Automatic quality-first routing
 
@@ -17,7 +24,7 @@ This skill cannot change the parent model. When the runtime exposes the parent i
 
 | Role | Model | Reasoning | Ownership |
 |---|---|---|---|
-| Parent / art director / integrator | `gpt-5.6-sol` | `xhigh` | Full brief, room contract, acceptance; not target-map writer while builder runs |
+| Parent / art director / integrator | `gpt-5.6-sol` minimum; higher tier only after user confirmation | `xhigh` | Full brief, room contract, acceptance; not target-map writer while builder runs |
 | Geometry explorer | `gpt-5.6-terra` | `high` | Read-only map/geometry survey |
 | Asset inventory and license scout | `gpt-5.6-luna` | `medium` | Read-only inventory/report |
 | Blender hero-asset worker | `gpt-5.6-sol` | `high` | Isolated source/export/import-ready assets only |
@@ -26,7 +33,7 @@ This skill cannot change the parent model. When the runtime exposes the parent i
 | Final-map builder | `gpt-5.6-sol` | `high` | Sole writer of the named target `.umap` |
 | Evidence worker | `gpt-5.6-luna` | `medium` | Screenshots, hashes, counts, logs, and reports only |
 | Structural QA | `gpt-5.6-terra` | `high` | Read-only collision, overlap, clearance, support, reload, and PIE audit |
-| Final visual QA | Sol parent | current `xhigh` | Opens the images directly and decides PASS/FAIL |
+| Final visual QA | Confirmed parent model | current `xhigh` | Opens the images directly and decides PASS/FAIL |
 
 Only the user may explicitly override one role. An override must name the role, exact model, and exact reasoning. Do not infer a global override from prose and do not restore the former “one model for every worker” behavior.
 
@@ -45,17 +52,17 @@ Promote one worker from `high` to `xhigh` only when the parent records at least 
 
 Apply that promotion only to the bounded worker and deliverable that needs it. Typical candidates are the hero-asset worker, layout worker, technical worker, final builder, or structural reviewer. Do not promote Luna inventory/evidence work merely because it has many files.
 
-`max` is not a routine final gate and is never assigned to a worker. The Sol parent may use it temporarily for one adjudication only when both conditions hold: (1) two `xhigh` attempts or reviews remain in material conflict or fail to resolve a non-reversible decision; and (2) the decision changes the room contract, protected architecture, or a costly-to-rework integration choice. Record the conflict, the options, and the decision. Otherwise remain at parent `xhigh`.
+`max` is not a routine final gate and is never assigned to a worker. The confirmed parent may use it temporarily for one adjudication only when both conditions hold: (1) two `xhigh` attempts or reviews remain in material conflict or fail to resolve a non-reversible decision; and (2) the decision changes the room contract, protected architecture, or a costly-to-rework integration choice. Record the conflict, the options, and the decision. Otherwise remain at parent `xhigh`.
 
 ## Required sequence
 
 1. **Survey without mutation.** Measure the real level, coordinate frame, floor, walls, glass, doors, ceiling, collision, existing assets, dirty files, protected actors, and player capsule. Illustrative coordinates never override measured geometry.
 2. **Freeze the room contract.** The parent writes the manifest and acceptance rubric before any target-map mutation.
 3. **Prepare assets in isolation.** Inventory, hero assets, layout proposals, and technical modules may run in parallel only when their files and ownership do not overlap.
-4. **Approve assets before placement.** The Sol parent inspects actual asset evidence. Rejected assets return to their owner; the map builder does not imitate missing assets with primitives.
+4. **Approve assets before placement.** The confirmed parent inspects actual asset evidence. Rejected assets return to their owner; the map builder does not imitate missing assets with primitives.
 5. **Run one builder.** The named Sol builder writes only the target map and explicitly scoped integration files from the approved manifest.
 6. **Collect independent evidence.** Luna captures evidence; Terra performs structural QA; neither edits the target map.
-7. **Parent visual gate.** The Sol parent opens every required eye-level and top-down image. A failed visual gate returns targeted corrections to the same builder or asset owner.
+7. **Parent visual gate.** The confirmed parent opens every required eye-level and top-down image. A failed visual gate returns targeted corrections to the same builder or asset owner.
 8. **Reload and report.** Reopen the saved level, rerun affected checks, and distinguish completed work from unresolved or unverified work.
 
 ## Manifest required before placement
@@ -141,8 +148,8 @@ Return: [files, IDs, transforms, evidence, deviations, blockers]
 | Rationalization | Required response |
 |---|---|
 | “Luna is cheaper, so it can build the final map.” | Route the final builder to Sol/high. Cost never silently changes the quality-first matrix. |
-| “Sol/high is enough for the parent because the brief is already detailed.” | Keep the parent at Sol/xhigh; detailed briefs still need cross-role adjudication and visual judgment. |
-| “A different premium model is equivalent to Sol as parent.” | Preserve the declared role/model pair; report an unavailable pair rather than silently substituting. |
+| “Sol/high is enough for the parent because the brief is already detailed.” | Keep the parent at least at Sol/xhigh, or use the higher-tier model the user confirmed; detailed briefs still need cross-role adjudication and visual judgment. |
+| “The parent model is higher-tier, so just switch without asking.” | Ask the user before using a higher-tier parent; after confirmation, use it only for parent duties and keep worker assignments unchanged. |
 | “The last review is important, so use max by default.” | Parent xhigh is the final gate. Max requires two unresolved xhigh attempts plus a non-reversible contract, architecture, or costly integration decision. |
 | “The deadline, actor count, or manager request justifies xhigh/max everywhere.” | Promote only the one bounded deliverable after an observable promotion trigger. Parallelism and scope control solve throughput; reasoning inflation does not. |
 | “These labeled cubes count as functional props.” | Reject them at the real-asset gate. Labels and counts are not models. |
