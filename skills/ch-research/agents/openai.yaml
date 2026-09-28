@@ -1,0 +1,7 @@
+interface:
+  display_name: "Ch Research"
+  short_description: "Multi-agent research with source cross-checking"
+  default_prompt: "Use $ch-research to investigate this question with independent sources and a confidence-calibrated synthesis."
+
+policy:
+  allow_implicit_invocation: true
