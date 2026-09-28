@@ -1,0 +1,4 @@
+interface:
+  display_name: "Ch Capturing What Worked"
+  short_description: "Propose reusable lessons for approval"
+  default_prompt: "Use $ch-capturing-what-worked after a verified task to propose a reusable lesson and request user approval before saving it."

@@ -26,16 +26,9 @@
 - Không dựng được app thì nói thẳng là chưa kiểm được và nhờ người dùng xem giúp — không được báo xong.
 
 # Ghi lại cách làm đúng
-- **Đầu mỗi task, nếu repo có `docs/recipes/` thì `ls` nó trước.** Skill thì tự hiện trong danh
-  sách, còn recipe nằm im — không chủ động nhìn thì viết ra cũng vô ích.
-- Làm xong một task VÀ đã kiểm chứng là đúng thì chạy skill `ch-capturing-what-worked` để cân nhắc
-  ghi lại. Nó có cổng chặn riêng, hầu hết task sẽ không đáng ghi — cứ để nó tự quyết.
-- Ba chỗ ghi, `ch-capturing-what-worked` có cây quyết định đầy đủ:
-  - Đúng ở mọi dự án → `~/dotagents/skills/` rồi chạy `~/dotagents/install.sh`
-  - Quy trình riêng của dự án này → `<dự án>/.claude/skills/<tên>/SKILL.md` (Claude) hoặc `<dự án>/.codex/skills/<tên>/SKILL.md` (Codex)
-  - Kiến thức riêng của dự án này → `<dự án>/docs/recipes/<slug>.md`
-- Viết skill mà cần chặt chẽ (loại luật agent hay lách) thì dùng skill `writing-skills` — nó bắt
-  chạy subagent thử trước để xem agent lách bằng cớ gì. Chỉ là tài liệu hướng dẫn thì viết thẳng.
+- Đầu mỗi task, nếu repo có `docs/recipes/`, xem danh sách và đọc recipe liên quan.
+- Sau khi task hoàn tất và đã kiểm chứng, dùng `ch-capturing-what-worked` để cân nhắc bài học đáng lưu. Nếu có, đề xuất nội dung cụ thể, hình thức và đường dẫn lưu (recipe, rules hoặc skill; tạo mới hay cập nhật), giải thích lợi ích rồi hỏi người dùng xác nhận.
+- Chỉ ghi hoặc cập nhật bài học sau khi người dùng đồng ý với đề xuất; nếu đã có yêu cầu rõ ràng cho đúng nội dung và nơi lưu đó thì thực hiện theo yêu cầu, không hỏi lại.
 
 # Không commit skill của bộ kit vào repo dự án
 - Installer tự quản lý block ignore cho các bản sao skill kit trong dự án. Không xóa block hoặc dùng `git add -f` để commit các bản sao này.

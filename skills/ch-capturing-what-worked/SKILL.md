@@ -1,6 +1,6 @@
 ---
 name: ch-capturing-what-worked
-description: Dùng ngay sau khi một task đã làm xong VÀ đã kiểm chứng là đúng, để cân nhắc ghi lại cách làm cho lần sau. Chỉ ghi khi cách làm đúng KHÔNG phải là cách hiển nhiên — mục đích là chặn lần sau đi lại đúng cái ngõ cụt vừa đi.
+description: Dùng ngay sau khi một task đã làm xong VÀ đã kiểm chứng là đúng, để đề xuất lưu bài học cho lần sau và chờ người dùng xác nhận trước khi ghi. Chỉ ghi khi cách làm đúng KHÔNG phải là cách hiển nhiên — mục đích là chặn lần sau đi lại đúng cái ngõ cụt vừa đi.
 ---
 
 # Ghi lại cách làm đúng
@@ -21,14 +21,14 @@ cứu là **cái bẫy** — lý do cách hiển nhiên lại sai.
 Ghi bừa thì ba tháng sau có ba chục file rác, không ai đọc, và những file thật sự quý bị chôn
 trong đó. Nên phải qua cổng.
 
-**Chỉ ghi khi có ít nhất một điều sau đúng:**
+**Chỉ đề xuất ghi khi có ít nhất một điều sau đúng:**
 
 - Cách làm đầu tiên tôi chọn đã **sai**, và phải quay lại làm cách khác
 - Phải đọc từ ba file trở lên hoặc phải tra tài liệu ngoài mới hiểu được cách làm
 - Có một **cái bẫy im lặng**: làm sai mà không có lỗi, không có test đỏ, chỉ sai âm thầm
 - Có một quy ước riêng của dự án này mà nhìn code không tự suy ra được
 
-**Không ghi khi:**
+**Không đề xuất ghi khi:**
 
 - Làm đúng ngay từ lần đầu bằng cách hiển nhiên
 - Chỉ là kiến thức phổ thông về framework, tra Google ra ngay
@@ -41,8 +41,7 @@ Hai câu hỏi, theo đúng thứ tự này.
 
 ### Câu 1: cách làm này có đúng ở một dự án khác không?
 
-**CÓ** → skill chung: `~/dotagents/skills/<tên>/SKILL.md`, rồi chạy
-`~/dotagents/install.sh`. Từ đó mọi dự án trên mọi máy đều có.
+**CÓ** → đề xuất skill chung trong source kit dotagents: `skills/<tên>/SKILL.md`. Việc cài đặt sang runtime chỉ thực hiện khi nằm trong phạm vi được người dùng duyệt.
 
 Ví dụ: "cách bắt lỗi hydration mismatch của React", "cách dò rò rỉ bộ nhớ trong test Node".
 
@@ -55,7 +54,7 @@ của một dự án thành luật cho mọi dự án.
 Chỉ hỏi khi câu 1 trả lời KHÔNG.
 
 **Quy trình** — có các bước phải tuân theo, và tuân sai thì hỏng → **skill riêng của dự án**:
-`<dự án>/.claude/skills/<tên>/SKILL.md`, có frontmatter `name` + `description` như mọi skill khác.
+`<dự án>/.claude/skills/<tên>/SKILL.md` (Claude) hoặc `<dự án>/.codex/skills/<tên>/SKILL.md` (Codex), có frontmatter `name` + `description` như mọi skill khác.
 
 Ví dụ: "trước khi sửa schema phải chạy `npm run db:check` rồi mới generate migration",
 "deploy staging phải qua `scripts/deploy.sh`, gọi thẳng `vercel` là hỏng biến môi trường".
@@ -90,9 +89,24 @@ ls docs/recipes/ .claude/skills/ 2>/dev/null
 grep -ril "<từ khoá>" docs/recipes/ .claude/skills/ ~/dotagents/skills/ 2>/dev/null
 ```
 
-Có file gần đúng thì **sửa nó**. Hai file cùng chủ đề mà lệch nhau còn tệ hơn không có file nào.
+Có file gần đúng thì **đề xuất sửa nó**. Hai file cùng chủ đề mà lệch nhau còn tệ hơn không có file nào.
 
-## Bước 3: Viết — đúng bốn mục, ngắn
+## Bước 3: Đề xuất nội dung và xin xác nhận
+
+Trước khi tạo hoặc cập nhật file bài học, trình bày:
+- Bài học cụ thể và bằng chứng từ task đã kiểm chứng.
+- Bẫy hoặc lỗi sẽ tránh được trong lần sau.
+- Hình thức, đường dẫn và nội dung dự kiến; nêu rõ tạo mới hay sửa file hiện có.
+
+Có thể đề xuất recipe cho kiến thức cần tra, skill cho quy trình có điều kiện kích hoạt, hoặc rules cho chính sách ngắn cần áp dụng thường xuyên. Không chép lại hướng dẫn skill vào rules. Với rules của dotagents, sửa source common/overlay phù hợp; không sửa tay block runtime do installer quản lý.
+
+Hỏi người dùng có muốn lưu đề xuất này không. Chỉ ghi sau khi nhận được xác nhận cho đúng nội dung và phạm vi. Im lặng hoặc hết thời gian chờ không phải xác nhận. Nếu người dùng đã yêu cầu rõ việc lưu đúng bài học và nơi lưu đó, thực hiện luôn; không hỏi lại.
+
+Việc tạo draft trong câu trả lời để người dùng duyệt không cho phép tự ghi file. Khi người dùng từ chối, bỏ đề xuất. Khi họ chỉnh đề xuất, làm theo phạm vi đã được đồng ý.
+
+## Bước 4: Ghi sau khi được duyệt
+
+Với recipe, dùng đúng bốn mục dưới đây. Với rules, giữ ngắn và không lặp lại quy trình trong skill. Với skill, theo cấu trúc skill hiện có; dùng `writing-skills` khi cần kiểm chứng khả năng tuân thủ của agent.
 
 ```markdown
 # <Việc gì>
@@ -113,10 +127,9 @@ biểu hiện ra sao. Không có mục này thì cả file gần như vô dụng
 
 Nhắm dưới 40 dòng. Dài hơn thường là đang chép lại code chứ không phải ghi lại bài học.
 
-## Bước 4: Ghi ngay, đừng dồn
+## Ghi theo phạm vi đã được duyệt
 
-Viết **ngay khi vừa xác nhận task đúng**, lúc còn nhớ mình đã sai ở đâu. Dồn tới cuối phiên
-thì cái bẫy — thứ đáng giá nhất — là cái bị quên đầu tiên.
+Nêu đề xuất ngay sau khi task được kiểm chứng để còn nhớ rõ bài học. Chỉ ghi sau khi người dùng duyệt; kiểm tra diff và báo kết quả cùng đường dẫn. Việc lưu bài học không tự cho phép commit, push hoặc cài đặt ra ngoài phạm vi đã duyệt.
 
 ## Phân biệt với những thứ đang có
 
