@@ -73,8 +73,14 @@ git -C "$project" check-ignore -q .codex/skills/graphify/SKILL.md || fail 'Codex
 if git -C "$project" check-ignore -q .claude/skills/project-only/SKILL.md; then fail 'Project Claude skill was incorrectly ignored'; fi
 if git -C "$project" check-ignore -q .codex/skills/project-only/SKILL.md; then fail 'Project Codex skill was incorrectly ignored'; fi
 check_project="$TMP_DIR/check-project"
-mkdir -p "$check_project"
+mkdir -p "$check_project/.codex"
+printf "existing ignore\n" > "$check_project/.gitignore"
+printf "existing config\n" > "$check_project/.codex/config.toml"
+check_gitignore_hash=$(sha256sum "$check_project/.gitignore")
+check_config_hash=$(sha256sum "$check_project/.codex/config.toml")
 "$KIT_DIR/install.sh" --check --project "$check_project" > "$TMP_DIR/check-output"
+[ "$check_gitignore_hash" = "$(sha256sum "$check_project/.gitignore")" ] || fail "--check modified project .gitignore"
+[ "$check_config_hash" = "$(sha256sum "$check_project/.codex/config.toml")" ] || fail "--check modified project config"
 [ ! -e "$check_project/CLAUDE.md" ] || fail '--check wrote project Claude rules'
 [ ! -e "$check_project/AGENTS.md" ] || fail '--check wrote project Codex rules'
 [ ! -e "$check_project/.claude/skills" ] || fail '--check wrote project Claude skills'
@@ -141,5 +147,89 @@ grep -q 'Xác nhận hết hiệu lực' "$KIT_DIR/skills/$name/SKILL.md" || fai
 grep -q 'gpt-5.6-sol' "$KIT_DIR/skills/$name/SKILL.md" || fail 'Medium profile mapping is missing'
 grep -q 'gpt-6-astra' "$KIT_DIR/skills/$name/SKILL.md" || fail 'High profile mapping is missing'
 grep -q 'UNASSIGNED' "$KIT_DIR/skills/$name/SKILL.md" || fail 'Low profile must remain unassigned'
+
+
+# Both runtime rules must contain the complete common policy as one contiguous block.
+for rules_file in "$project/CLAUDE.md" "$project/AGENTS.md"; do
+  awk '/^<!-- dotagents:begin/{inside=1; next} inside && !started && /^$/ {next} inside {started=1; print; count++; if (count == common_lines) exit}' \
+    common_lines="$(wc -l < "$KIT_DIR/rules/common.md")" "$rules_file" > "$TMP_DIR/common-output"
+  assert_file_equal "$KIT_DIR/rules/common.md" "$TMP_DIR/common-output"
+done
+for overlay in "$KIT_DIR/claude/CLAUDE.md" "$KIT_DIR/codex/AGENTS.md"; do
+  if grep -q '^# Quy tắc\|^# Tài liệu kế hoạch\|^# Tạo thư mục\|^# Theo dõi task\|^# superpowers$' "$overlay"; then
+    fail "Platform overlay contains a shared policy: $overlay"
+  fi
+done
+
+# Shared rules, platform overlays, migration preservation, and idempotency.
+grep -qx $'# Ng\u00f4n ng\u1eef' "$project/CLAUDE.md" || fail 'Common rules missing from Claude output'
+grep -qx $'# Ng\u00f4n ng\u1eef' "$project/AGENTS.md" || fail 'Common rules missing from Codex output'
+grep -q '^# Rules .*Claude Code$' "$project/CLAUDE.md" || fail 'Claude overlay missing from Claude output'
+if grep -q '^# Rules .*Claude Code$' "$project/AGENTS.md"; then fail 'Claude overlay leaked into Codex output'; fi
+grep -q '^# Rules .*Codex$' "$project/AGENTS.md" || fail 'Codex overlay missing from Codex output'
+if grep -q '^# Rules .*Codex$' "$project/CLAUDE.md"; then fail 'Codex overlay leaked into Claude output'; fi
+[ "$(grep -c $'^# Ng\u00f4n ng\u1eef$' "$project/CLAUDE.md")" = 1 ] || fail 'Common rules duplicated in Claude output'
+[ "$(grep -c $'^# Ng\u00f4n ng\u1eef$' "$project/AGENTS.md")" = 1 ] || fail 'Common rules duplicated in Codex output'
+
+legacy_rules_project="$TMP_DIR/legacy-rules-project"
+mkdir -p "$legacy_rules_project"
+printf '# Ng\u00f4n ng\u1eef\nlegacy user rule\n# Legacy project rule\n' > "$legacy_rules_project/CLAUDE.md"
+printf '# Ng\u00f4n ng\u1eef\nlegacy user rule\n# Legacy project rule\n' > "$legacy_rules_project/AGENTS.md"
+printf '# Ng\u00f4n ng\u1eef\nlegacy user rule\n# Legacy project rule\n' > "$TMP_DIR/legacy-rules-prefix"
+"$KIT_DIR/install.sh" --project "$legacy_rules_project" --rules-only > "$TMP_DIR/legacy-rules-output" 2>&1
+grep -q 'legacy user rule' "$legacy_rules_project/CLAUDE.md" || fail 'Legacy Claude rules were not preserved'
+grep -q 'legacy user rule' "$legacy_rules_project/AGENTS.md" || fail 'Legacy Codex rules were not preserved'
+[ "$(grep -c '^<!-- dotagents:begin' "$legacy_rules_project/CLAUDE.md")" = 1 ] || fail 'Claude migration block count is wrong'
+[ "$(grep -c '^<!-- dotagents:begin' "$legacy_rules_project/AGENTS.md")" = 1 ] || fail 'Codex migration block count is wrong'
+head -n 3 "$legacy_rules_project/CLAUDE.md" > "$TMP_DIR/legacy-claude-prefix"
+head -n 3 "$legacy_rules_project/AGENTS.md" > "$TMP_DIR/legacy-codex-prefix"
+assert_file_equal "$TMP_DIR/legacy-rules-prefix" "$TMP_DIR/legacy-claude-prefix"
+assert_file_equal "$TMP_DIR/legacy-rules-prefix" "$TMP_DIR/legacy-codex-prefix"
+[ "$(tail -n 1 "$legacy_rules_project/CLAUDE.md")" = "<!-- dotagents:end -->" ] || fail 'Claude managed block was not appended at end'
+[ "$(tail -n 1 "$legacy_rules_project/AGENTS.md")" = "<!-- dotagents:end -->" ] || fail 'Codex managed block was not appended at end'
+grep -q $'1 m\u1ee5c tr\u00f9ng ti\u00eau \u0111\u1ec1' "$TMP_DIR/legacy-rules-output" || fail 'Migration warning did not report duplicate headings'
+printf '\nlegacy user edit after install\n' >> "$legacy_rules_project/CLAUDE.md"
+printf '\nlegacy user edit after install\n' >> "$legacy_rules_project/AGENTS.md"
+"$KIT_DIR/install.sh" --project "$legacy_rules_project" --rules-only > /dev/null 2>&1
+grep -qx 'legacy user edit after install' "$legacy_rules_project/CLAUDE.md" || fail 'Claude edit outside marker was not preserved'
+grep -qx 'legacy user edit after install' "$legacy_rules_project/AGENTS.md" || fail 'Codex edit outside marker was not preserved'
+legacy_claude_hash=$(sha256sum "$legacy_rules_project/CLAUDE.md")
+legacy_codex_hash=$(sha256sum "$legacy_rules_project/AGENTS.md")
+"$KIT_DIR/install.sh" --project "$legacy_rules_project" --rules-only > /dev/null 2>&1
+[ "$legacy_claude_hash" = "$(sha256sum "$legacy_rules_project/CLAUDE.md")" ] || fail 'Claude reinstall is not idempotent'
+[ "$legacy_codex_hash" = "$(sha256sum "$legacy_rules_project/AGENTS.md")" ] || fail 'Codex reinstall is not idempotent'
+
+broken_kit="$TMP_DIR/broken-kit"
+cp -a "$KIT_DIR" "$broken_kit"
+broken_project="$TMP_DIR/broken-project"
+mkdir -p "$broken_project"
+cp "$broken_kit/rules/common.md" "$broken_kit/rules/common.md.backup"
+mv "$broken_kit/rules/common.md" "$broken_kit/rules/common.md.disabled"
+if "$broken_kit/install.sh" --project "$broken_project" --rules-only > "$TMP_DIR/missing-common-output" 2>&1; then
+  fail 'Install accepted a missing common source'
+fi
+[ ! -e "$broken_project/CLAUDE.md" ] || fail 'Missing common source wrote Claude rules'
+[ ! -e "$broken_project/AGENTS.md" ] || fail 'Missing common source wrote Codex rules'
+mv "$broken_kit/rules/common.md.disabled" "$broken_kit/rules/common.md"
+: > "$broken_kit/rules/common.md"
+if "$broken_kit/install.sh" --project "$broken_project" --rules-only > "$TMP_DIR/empty-common-output" 2>&1; then
+  fail 'Install accepted an empty common source'
+fi
+[ ! -e "$broken_project/CLAUDE.md" ] || fail 'Empty common source wrote Claude rules'
+[ ! -e "$broken_project/AGENTS.md" ] || fail 'Empty common source wrote Codex rules'
+mv "$broken_kit/rules/common.md.backup" "$broken_kit/rules/common.md"
+mv "$broken_kit/claude/CLAUDE.md" "$broken_kit/claude/CLAUDE.md.disabled"
+if "$broken_kit/install.sh" --project "$broken_project" --rules-only > "$TMP_DIR/missing-overlay-output" 2>&1; then
+  fail 'Install accepted a missing overlay source'
+fi
+[ ! -e "$broken_project/CLAUDE.md" ] || fail 'Missing overlay source wrote Claude rules'
+[ ! -e "$broken_project/AGENTS.md" ] || fail 'Missing overlay source wrote Codex rules'
+mv "$broken_kit/claude/CLAUDE.md.disabled" "$broken_kit/claude/CLAUDE.md"
+printf '\n<!-- dotagents:begin invalid-source -->\n' >> "$broken_kit/rules/common.md"
+if "$broken_kit/install.sh" --project "$broken_project" --rules-only > "$TMP_DIR/marker-source-output" 2>&1; then
+  fail 'Install accepted a marker in source rules'
+fi
+[ ! -e "$broken_project/CLAUDE.md" ] || fail 'Invalid source marker wrote Claude rules'
+[ ! -e "$broken_project/AGENTS.md" ] || fail 'Invalid source marker wrote Codex rules'
 
 echo 'PASS: installer preserves custom skills, detects collisions, and supports dry-run checks'

@@ -72,7 +72,7 @@ Chỉ liệt kê thư mục có `.dotagents-manifest`, tức thư mục thật s
 config của account khác trên cùng máy không lọt vào.
 
 Claude cài **28 skill**, còn Codex cài **30 skill**. Mỗi thư mục cài đặt phải có đúng 1 khối rules. Ra 2 khối là file đang chứa rules hai lần —
-xem mục [Lần đầu chạy trên máy đã có sẵn CLAUDE.md](#lần-đầu-chạy-trên-máy-đã-có-sẵn-claudemd).
+xem mục [Lần đầu chạy trên máy đã có sẵn rules](#lần-đầu-chạy-trên-máy-đã-có-sẵn-rules).
 Không ra dòng nào là bước 1 chưa chạy được.
 
 ### Bước 4 — Báo lại
@@ -152,7 +152,9 @@ Luôn kiểm tra trước khi cài:
 ~/dotagents/install.sh --project /đường/dẫn/tới/project
 ```
 
-`--check` không tạo, sửa hay xóa file. Nếu skill kit trùng tên với một skill đã có nhưng tên đó không nằm trong `.dotagents-manifest`, installer chỉ nhận bản trùng khớp chính xác với danh mục kit; nếu nội dung khác, nó báo collision và dừng trước khi sửa rules, skills hay `.gitignore`. Cách này nhận lại an toàn các profile map từng được chép thủ công theo hướng dẫn cũ. Đổi tên/di chuyển skill riêng hoặc quyết định thủ công cách xử lý rồi mới chạy lại; installer không tự ghi đè collision.
+`--check` không tạo, sửa hay xóa rules, skills hoặc config trong đích cài đặt. Installer chỉ dựng source ghép trong thư mục tạm nội bộ rồi dọn khi kết thúc. Output nêu source common/overlay, file runtime đích, trạng thái marker, số tiêu đề trùng ngoài marker và hành động dự kiến; source thiếu, rỗng, chứa marker quản lý hoặc resolve ra ngoài kit khiến lệnh dừng trước khi ghi.
+
+Nếu skill kit trùng tên với một skill đã có nhưng tên đó không nằm trong `.dotagents-manifest`, installer chỉ nhận bản trùng khớp chính xác với danh mục kit; nếu nội dung khác, nó báo collision và dừng trước khi sửa rules, skills hay `.gitignore`. Cách này nhận lại an toàn các profile map từng được chép thủ công theo hướng dẫn cũ. Đổi tên/di chuyển skill riêng hoặc quyết định thủ công cách xử lý rồi mới chạy lại; installer không tự ghi đè collision.
 
 Skill kit đã có trong manifest được cập nhật bình thường. Skill riêng tên khác, rules nằm ngoài marker dotagents, và mọi rule `.gitignore` nằm ngoài block dotagents đều được giữ nguyên.
 
@@ -178,11 +180,27 @@ Với dự án cài per-project, thêm `--project /đường/dẫn/tới/project
 
 ```
 skills/                30 skill ở một nguồn (28 dùng chung + 2 skill Codex-only)
-claude/CLAUDE.md       rules bản Claude Code
-codex/AGENTS.md        rules bản Codex
+rules/common.md        nguồn rules chung của hai agent
+claude/CLAUDE.md       overlay rules riêng Claude Code
+codex/AGENTS.md        overlay rules riêng Codex
 install.sh
 SUPERPOWERS-LICENSE    MIT, cho 14 skill copy từ obra/superpowers
 ```
+
+### Source rules và file runtime
+
+Sửa quy tắc chung trong `rules/common.md`; sửa cách dùng skill hoặc tool riêng của từng agent trong `codex/AGENTS.md` hay `claude/CLAUDE.md`. Hai overlay chỉ chứa phần riêng của nền tảng. Source không chứa marker quản lý.
+
+Installer ghép **common trước, overlay sau** vào một khối `dotagents:begin` / `dotagents:end`, rồi ghi vào file runtime mà agent nạp:
+
+| Phạm vi | Codex | Claude Code |
+|---|---|---|
+| Source được ghép | `rules/common.md` + `codex/AGENTS.md` | `rules/common.md` + `claude/CLAUDE.md` |
+| Project (`--project <TARGET>`) | `<TARGET>/AGENTS.md` | `<TARGET>/CLAUDE.md` |
+| Global | `$CODEX_HOME/AGENTS.md` | `$CLAUDE_CONFIG_DIR/CLAUDE.md` |
+| Global mặc định | `~/.codex/AGENTS.md` | `~/.claude/CLAUDE.md` |
+
+Các file trong `codex/` và `claude/` là source của kit; để cập nhật rules runtime, chạy lại `install.sh` với đúng selector và phạm vi cài đặt.
 
 Installer quét `skills/` và cài vào thư mục đích của từng agent. Mặc định skill áp dụng cho cả Claude Code và Codex; có thể khai báo `agents: codex` trong frontmatter để giới hạn profile map cho Codex. Skill map theo level vì thế được cài cả global lẫn project khi chọn Codex.
 
@@ -275,19 +293,19 @@ Không truyền level thì mặc định `med`. Parent mismatch phải block tr�
 
 ## Chạy lại
 
-An toàn. Rules nằm giữa cặp marker `dotagents:begin` / `dotagents:end`, chạy lại chỉ thay phần trong khối — mọi thứ bạn tự viết ngoài khối được giữ nguyên. File rules cũ được backup kèm timestamp.
+An toàn. Rules nằm giữa cặp marker `dotagents:begin` / `dotagents:end`, chạy lại chỉ thay phần trong khối — mọi thứ bạn tự viết ngoài khối được giữ nguyên. Ở chế độ global, file rules cũ được backup kèm timestamp.
 
 Skills bị ghi đè theo tên. Skill nào lần trước dotagents cài mà nay repo không còn thì bị gỡ — đối chiếu qua file `.dotagents-manifest` nằm trong chính thư mục skills, nên skill bạn tự thêm tay và `~/.codex/skills/.system/` của Codex không bị đụng tới.
 
-### Lần đầu chạy trên máy đã có sẵn CLAUDE.md
+### Lần đầu chạy trên máy đã có sẵn rules
 
-Installer giữ nguyên nội dung cũ và nối khối `dotagents` xuống dưới. Nó **không** tự xoá phần cũ, vì không có cách nào chắc chắn phân biệt rules bản cũ với ghi chú riêng của bạn.
+Với `AGENTS.md` hoặc `CLAUDE.md` có nội dung nhưng chưa có marker, installer giữ nguyên toàn bộ nội dung cũ và nối khối common + overlay xuống cuối. Cảnh báo nêu đường dẫn file, số dòng giữ lại và số tiêu đề Markdown cấp một (`# ...`) trùng với rules mới.
 
-Nếu phần cũ **trùng tiêu đề mục** với rules mới, installer sẽ cảnh báo: gần như chắc chắn đó là bản cũ của chính bộ rules này, và để lại thì hai bản mâu thuẫn nhau — danh sách skill đã đổi qua nhiều lần cắt, agent đọc bản cũ sẽ tưởng những skill đã gỡ vẫn còn. Lúc đó mở file ra, xoá phần nằm **trên** dòng `dotagents:begin`.
+Tiêu đề trùng là dấu hiệu cần review vì có thể còn bản rules cũ gây mâu thuẫn. Mở file runtime, đọc phần **trên** dòng `dotagents:begin` và chỉ xóa đoạn đã xác nhận là bản cũ; giữ lại rules riêng của bạn. Installer không tự xóa hoặc hợp nhất nội dung đó. Khi file đã có marker, lần cài sau thay khối dotagents và giữ nội dung ngoài marker.
 
 ## Cập nhật bộ kit
 
-Sửa `claude/CLAUDE.md`, `codex/AGENTS.md` hoặc `skills/`, commit, push. Máy khác `git pull && ./install.sh`.
+Sửa `rules/common.md` cho rule chung, `claude/CLAUDE.md` / `codex/AGENTS.md` cho overlay riêng, hoặc `skills/` cho skill; commit, push. Máy khác `git pull && ./install.sh`.
 
 ## Máy mới cần gì thêm
 

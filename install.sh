@@ -58,10 +58,101 @@ if [ "$MODE" = global ] && [ "$WANT_CLAUDE" = 0 ] && [ "$WANT_CODEX" = 0 ]; then
   fi
 fi
 
+# Resolve cả symlink để nguồn luôn thuộc kit hiện tại.
+resolve_rules_source() {
+  local src="$1"
+  if [ ! -f "$src" ] || [ ! -r "$src" ] || [ ! -s "$src" ]; then
+    echo "Nguồn rules không tồn tại, không đọc được hoặc rỗng: $src" >&2
+    return 1
+  fi
+  python3 - "$KIT_DIR" "$src" <<'PYTHON'
+import os, sys
+kit, source = map(os.path.realpath, sys.argv[1:])
+if os.path.commonpath([kit, source]) != kit:
+    print("Nguồn rules resolve ra ngoài kit: " + sys.argv[2] + " -> " + source, file=sys.stderr)
+    sys.exit(1)
+print(source)
+PYTHON
+}
+
+rules_overlay_path() {
+  case "$1" in
+    claude) printf '%s\n' "$KIT_DIR/claude/CLAUDE.md" ;;
+    codex) printf '%s\n' "$KIT_DIR/codex/AGENTS.md" ;;
+    *) echo "Agent không hợp lệ khi dựng rules: $1" >&2; return 1 ;;
+  esac
+}
+
+validate_rules_markers() {
+  local src="$1" counts begins ends
+  counts=$(awk '{ b += gsub(/<!-- dotagents:begin/, "&"); e += gsub(/<!-- dotagents:end/, "&") }
+    END { print b+0, e+0 }' "$src") || return 1
+  read -r begins ends <<< "$counts"
+  if [ "$begins" -ne 0 ] || [ "$ends" -ne 0 ]; then
+    echo "Nguồn rules chứa marker quản lý: $src (begin=$begins, end=$ends); không được lồng marker." >&2
+    return 1
+  fi
+}
+
+# Dựng common trước overlay; chỉ ghi source tạm sau khi cả hai đã hợp lệ.
+build_rules_source() {
+  local agent="$1" output="$2" common overlay
+  overlay=$(rules_overlay_path "$agent") || return 1
+  common=$(resolve_rules_source "$KIT_DIR/rules/common.md") || return 1
+  overlay=$(resolve_rules_source "$overlay") || return 1
+  validate_rules_markers "$common" || return 1
+  validate_rules_markers "$overlay" || return 1
+  {
+    printf '\n' || return 1
+    cat "$common" || return 1
+    printf '\n\n' || return 1
+    cat "$overlay" || return 1
+    printf '\n\n' || return 1
+  } > "$output"
+}
+
+prepare_rules_sources() {
+  RULES_TMP_DIR=$(mktemp -d) || return 1
+  if [ "$WANT_CLAUDE" = 1 ]; then
+    CLAUDE_RULES_SOURCE="$RULES_TMP_DIR/claude.md"
+    build_rules_source claude "$CLAUDE_RULES_SOURCE" || return 1
+  fi
+  if [ "$WANT_CODEX" = 1 ]; then
+    CODEX_RULES_SOURCE="$RULES_TMP_DIR/codex.md"
+    build_rules_source codex "$CODEX_RULES_SOURCE" || return 1
+  fi
+}
+
+# Chỉ đếm heading ngoài khối được quản lý, kể cả khi --check file đã cài.
+duplicate_rules_headings() {
+  local dest="$1" src="$2"
+  if [ ! -f "$dest" ]; then
+    printf '0\n'
+    return 0
+  fi
+  comm -12 <(awk -v b="$BEGIN_MARK" -v e="$END_MARK" '
+    index($0,b){skip=1} !skip && /^# /{print} index($0,e){skip=0}' "$dest" | sort -u) \
+    <(awk '/^# /{print}' "$src" | sort -u) | wc -l | tr -d ' '
+}
+
+warn_rules_migration() {
+  local dest="$1" src="$2" kept dup
+  [ -f "$dest" ] && [ -s "$dest" ] || return 0
+  grep -qF "$BEGIN_MARK" "$dest" && return 0
+  kept=$(wc -l < "$dest" | tr -d ' ')
+  dup=$(duplicate_rules_headings "$dest" "$src")
+  echo "  ! $dest chưa có marker: giữ nguyên $kept dòng phía trên khối dotagents; $dup mục trùng tiêu đề với rules mới." >&2
+  if [ "$dup" -gt 0 ]; then
+    echo "    Có thể là rules bản cũ gây mâu thuẫn. Review nội dung TRÊN dòng dotagents:begin; chỉ xoá nếu xác nhận là bản cũ." >&2
+  else
+    echo "    Review nội dung cũ cùng block mới để tránh quy tắc mâu thuẫn." >&2
+  fi
+}
+
 # Ghép khối rules vào file đích, thay thế khối cũ nếu đã có.
 # $1 = file đích, $2 = file rules nguồn
 merge_rules() {
-  local dest="$1" src="$2" tmp kept dup
+  local dest="$1" src="$2" tmp
   tmp="$(mktemp)"
   if [ -f "$dest" ] && grep -qF "$BEGIN_MARK" "$dest"; then
     # Giữ nguyên phần người dùng tự viết ngoài khối.
@@ -73,15 +164,7 @@ merge_rules() {
     # rules bản cũ với ghi chú riêng của người dùng.
     cat "$dest" > "$tmp"
     printf '\n' >> "$tmp"
-    kept=$(wc -l < "$dest" | tr -d ' ')
-    # Trùng tiêu đề mục là dấu hiệu phần cũ chính là bản cũ của rules này.
-    dup=$(comm -12 <(grep '^# ' "$dest" | sort -u) <(grep '^# ' "$src" | sort -u) | wc -l | tr -d ' ')
-    echo "  ! $dest đã có sẵn $kept dòng, giữ nguyên phía trên khối dotagents." >&2
-    if [ "$dup" -gt 0 ]; then
-      echo "  ! $dup mục trùng tiêu đề với rules mới — nhiều khả năng đó là BẢN CŨ của" >&2
-      echo "    chính bộ rules này, và bản cũ sẽ mâu thuẫn với bản mới (danh sách skill" >&2
-      echo "    đã đổi). Mở file ra, xoá phần nằm TRÊN dòng dotagents:begin nếu đúng vậy." >&2
-    fi
+    warn_rules_migration "$dest" "$src"
   fi
   {
     printf '%s\n' "$BEGIN_MARK"
@@ -163,13 +246,30 @@ preflight_targets() {
   fi
 }
 
+report_rules_check() {
+  local agent="$1" dest="$2" src="$3" overlay marker action dup
+  overlay=$(rules_overlay_path "$agent")
+  if [ ! -f "$dest" ]; then
+    marker="file chưa tồn tại"; action="tạo một khối dotagents"
+  elif [ ! -s "$dest" ]; then
+    marker="file rỗng"; action="ghi một khối dotagents"
+  elif grep -qF "$BEGIN_MARK" "$dest"; then
+    marker="có marker dotagents"; action="thay khối dotagents, giữ nội dung ngoài marker"
+  else
+    marker="chưa có marker dotagents"; action="giữ nội dung cũ, nối một khối dotagents"
+  fi
+  dup=$(duplicate_rules_headings "$dest" "$src")
+  echo "  source -> common: $KIT_DIR/rules/common.md; overlay: $overlay"
+  echo "  rules  -> $dest ($marker; $dup mục trùng tiêu đề ngoài marker); sẽ $action"
+  warn_rules_migration "$dest" "$src"
+}
+
 report_check() {
   local scope="$1"
   echo "Kiểm tra an toàn: $scope"
   if [ "$RULES_ONLY" = 1 ]; then
-    echo "  rules  -> sẽ cập nhật khối dotagents; skills -> bỏ qua (--rules-only)"
+    echo "  skills -> bỏ qua (--rules-only)"
   else
-    echo "  rules  -> sẽ cập nhật khối dotagents"
     echo "  skills -> không có collision; sẽ cập nhật các skill trong manifest"
   fi
 }
@@ -330,6 +430,9 @@ tune_codex_config() {
   return 0
 }
 
+RULES_TMP_DIR=""
+trap '[ -z "$RULES_TMP_DIR" ] || rm -rf "$RULES_TMP_DIR"' EXIT
+
 if [ "$MODE" = project ]; then
   TARGET="${TARGET:-$PWD}"
   [ -d "$TARGET" ] || { echo "Không thấy thư mục: $TARGET" >&2; exit 1; }
@@ -339,6 +442,7 @@ if [ "$MODE" = project ]; then
     WANT_CLAUDE=1
     WANT_CODEX=1
   fi
+  prepare_rules_sources || exit 1
   project_targets=()
   [ "$WANT_CLAUDE" = 1 ] && project_targets+=("$TARGET/.claude/skills" claude)
   [ "$WANT_CODEX" = 1 ] && project_targets+=("$TARGET/.codex/skills" codex)
@@ -350,14 +454,16 @@ if [ "$MODE" = project ]; then
   [ "$WANT_CODEX" = 1 ] && project_scope+=" + Codex"
   if [ "$CHECK" = 1 ]; then
     report_check "$project_scope"
+    [ "$WANT_CLAUDE" = 1 ] && report_rules_check claude "$TARGET/CLAUDE.md" "$CLAUDE_RULES_SOURCE"
+    [ "$WANT_CODEX" = 1 ] && report_rules_check codex "$TARGET/AGENTS.md" "$CODEX_RULES_SOURCE"
     exit 0
   fi
   echo "Cài $project_scope"
   if [ "$WANT_CLAUDE" = 1 ]; then
-    merge_rules "$TARGET/CLAUDE.md" "$KIT_DIR/claude/CLAUDE.md"
+    merge_rules "$TARGET/CLAUDE.md" "$CLAUDE_RULES_SOURCE"
   fi
   if [ "$WANT_CODEX" = 1 ]; then
-    merge_rules "$TARGET/AGENTS.md" "$KIT_DIR/codex/AGENTS.md"
+    merge_rules "$TARGET/AGENTS.md" "$CODEX_RULES_SOURCE"
   fi
   if [ "$RULES_ONLY" = 0 ]; then
     [ "$WANT_CLAUDE" = 1 ] && copy_skills "$TARGET/.claude/skills" claude
@@ -387,6 +493,7 @@ sys.exit(0 if os.path.exists(p) and 'playwright' in json.load(open(p)).get('mcpS
     echo "  skills -> bỏ qua (--rules-only)"
   fi
 else
+  prepare_rules_sources || exit 1
   if [ "$RULES_ONLY" = 0 ]; then
     targets=()
     [ "$WANT_CLAUDE" = 1 ] && targets+=("$CLAUDE_DIR/skills" claude)
@@ -395,13 +502,15 @@ else
   fi
   if [ "$CHECK" = 1 ]; then
     report_check "GLOBAL"
+    [ "$WANT_CLAUDE" = 1 ] && report_rules_check claude "$CLAUDE_DIR/CLAUDE.md" "$CLAUDE_RULES_SOURCE"
+    [ "$WANT_CODEX" = 1 ] && report_rules_check codex "$CODEX_DIR/AGENTS.md" "$CODEX_RULES_SOURCE"
     exit 0
   fi
   if [ "$WANT_CLAUDE" = 1 ]; then
     echo "Cài CLAUDE CODE vào $CLAUDE_DIR"
     mkdir -p "$CLAUDE_DIR"
     backup "$CLAUDE_DIR/CLAUDE.md"
-    merge_rules "$CLAUDE_DIR/CLAUDE.md" "$KIT_DIR/claude/CLAUDE.md"
+    merge_rules "$CLAUDE_DIR/CLAUDE.md" "$CLAUDE_RULES_SOURCE"
     if [ "$RULES_ONLY" = 0 ]; then
       copy_skills "$CLAUDE_DIR/skills" claude
       tune_settings "$CLAUDE_DIR/settings.json"
@@ -414,7 +523,7 @@ else
     echo "Cài CODEX vào $CODEX_DIR"
     mkdir -p "$CODEX_DIR"
     backup "$CODEX_DIR/AGENTS.md"
-    merge_rules "$CODEX_DIR/AGENTS.md" "$KIT_DIR/codex/AGENTS.md"
+    merge_rules "$CODEX_DIR/AGENTS.md" "$CODEX_RULES_SOURCE"
     if [ "$RULES_ONLY" = 0 ]; then
       copy_skills "$CODEX_DIR/skills" codex
       tune_codex_config "$CODEX_DIR"
