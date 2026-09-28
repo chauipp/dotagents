@@ -4,30 +4,29 @@
 
 ## Đã làm gì
 
-- Tạo `$ch-updating-skill-models` ở chế độ explicit-only và chỉ cài cho Codex.
-- Tách quy trình thành AUDIT read-only và APPLY cần proposal ID cùng scope được duyệt.
-- Buộc AUDIT xác minh capability của Codex host, dùng `ch-research`, đánh giá từng role/profile và xuất proposal có evidence.
-- Thêm digest tái lập cùng các gate `BLOCKED_*` và `STALE_PROPOSAL` để tránh sửa sớm, đoán model khả dụng hoặc ghi đè skill đã đổi.
-- Chạy RED-GREEN với evaluator độc lập: control đã sửa model trước proposal; sau khi có skill, 5/5 mẫu giữ approval gate, capability thiếu bị block và proposal stale bị chặn.
-- Ghi lại recipe cho bẫy validator chuẩn không hiểu extension `agents: codex` của repo.
+- Tạo `$ch-updating-skill-models` explicit-only, chỉ cài cho Codex, với hai pha AUDIT read-only và APPLY sau khi người dùng duyệt proposal cụ thể.
+- Cho AUDIT tiếp tục khi host không expose capability; đánh dấu `UNVERIFIED` và yêu cầu preflight/fail-closed toàn profile cho parent cùng mọi worker trước khi dispatch.
+- Phân biệt target `default` với `profiled`, giữ nguyên tập profile hiện có và không tự tạo level.
+- Yêu cầu evidence theo đúng task, rubric/eval, giá và chi phí trên đầu ra đạt chuẩn; không dùng giá API làm phí subscription, và ghi `UNKNOWN`/`ESTIMATE` khi thiếu số đo.
+- Bảo vệ APPLY bằng source ledger/digest, approval có scope, stale check và kiểm tra các chỉnh sửa phụ thuộc.
 
 ## File chính
 
-- `skills/ch-updating-skill-models/SKILL.md`: entrypoint, routing AUDIT/APPLY và hard gate.
-- `skills/ch-updating-skill-models/references/evaluation.md`: tiêu chí chọn model/reasoning theo role, profile và chất lượng bằng chứng.
-- `skills/ch-updating-skill-models/references/proposal-contract.md`: schema proposal, thuật toán digest, cú pháp duyệt và stale check.
+- `skills/ch-updating-skill-models/SKILL.md`: định tuyến AUDIT/APPLY, profile mode và các gate.
+- `skills/ch-updating-skill-models/references/evaluation.md`: tiêu chí bằng chứng task-specific, billing surface, chi phí thực tế và hiệu năng.
+- `skills/ch-updating-skill-models/references/proposal-contract.md`: snapshot/digest, schema row/evidence card, approval và stale check.
 - `skills/ch-updating-skill-models/agents/openai.yaml`: metadata UI và policy explicit-only.
-- `docs/superpowers/specs/2026-09-25-skill-model-updater-design.md`: thiết kế đã duyệt.
-- `docs/superpowers/plans/2026-09-25-skill-model-updater.md`: các bước triển khai và bằng chứng hoàn tất.
-- `docs/recipes/validating-codex-only-skills.md`: cách validate skill Codex-only mà không làm mất bộ lọc installer.
+- `docs/superpowers/specs/2026-09-25-skill-model-updater-design.md` và `docs/superpowers/plans/2026-09-25-skill-model-updater.md`: thiết kế và các bước đã kiểm chứng.
+- `docs/recipes/validating-codex-only-skills.md`: phân biệt validator chuẩn với installer extension `agents: codex`.
 
 ## Khác với plan
 
-- Validator `skill-creator` không chấp nhận key mở rộng `agents: codex` mà installer của repo dùng. Bản sao tạm bỏ riêng key này trả `Skill is valid!`; bản thật được xác minh Codex-only bằng installer regression.
-- Không sửa `tests/install.sh`: test hiện có tự sinh expected manifest từ `skills/*/`, nên đã kiểm đúng việc cài skill mới cho Codex và không cài cho Claude mà không cần thêm assertion trùng lặp.
-- Sau khi task pass, `ch-capturing-what-worked` xác định khác biệt schema validator/installer đáng ghi thành recipe riêng.
+- Thay cổng chặn thiếu host capability bằng trạng thái `UNVERIFIED`, tiếp tục audit có điều kiện và yêu cầu fail-closed toàn profile cho parent và workers; nếu target chỉ gate parent thì rows đổi worker phải `BLOCKED`.
+- Bổ sung đánh giá chi phí theo billing surface và một đầu ra đạt chuẩn; không quy đổi giá API thành khoản phí Codex subscription khi không có căn cứ.
+- Installer regression không cần thêm assertion vì test hiện có tự dựng manifest và xác minh skill Codex-only.
 
 ## Còn dở / cần lưu ý
 
-- Skill cần được cài lại bằng `install.sh --codex` và phiên Codex cần khởi động lại trước khi tên skill mới xuất hiện trong danh sách khả dụng.
-- Khi dùng AUDIT thật, nếu host không cung cấp capability model/reasoning hoặc runtime không chạy được đúng `ch-research`, skill sẽ dừng theo gate thay vì đưa đề xuất.
+- Chưa chạy một AUDIT thật để đề xuất model cho skill đích; thiếu dữ liệu hiệu năng riêng cần được biểu thị `UNKNOWN` và xử lý bằng eval/A-B, không phải ước lượng chắc chắn.
+- `ch-writing-prompts-map` hiện chỉ preflight parent; khi capability host `UNVERIFIED`, các row đổi worker cần `BLOCKED` trừ khi proposal được duyệt bổ sung preflight toàn profile.
+- Muốn thấy metadata skill mới/cập nhật trong Codex có thể cần chạy installer `--codex` và khởi động lại phiên.

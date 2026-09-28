@@ -23,7 +23,6 @@ Lệnh đầu chạy `AUDIT`; hai lệnh sau chạy `APPLY`. Chỉ kích hoạt 
 | Điều kiện | Kết quả |
 |---|---|
 | Target thiếu, trùng tên hoặc không có model contract | `BLOCKED_TARGET` |
-| Không xác minh được model/effort host dispatch được | `BLOCKED_HOST_CAPABILITY` |
 | Không chạy đúng workflow `ch-research` | `BLOCKED_RESEARCH_RUNTIME` |
 | Target là chính `ch-research` trong audit này | `BLOCKED_SELF_RESEARCH` |
 | APPLY thiếu proposal/approval hợp lệ | `BLOCKED_PROPOSAL` |
@@ -33,9 +32,13 @@ Lệnh đầu chạy `AUDIT`; hai lệnh sau chạy `APPLY`. Chỉ kích hoạt 
 
 1. Resolve target theo thứ tự: đường dẫn user đưa → `skills/<name>` trong repo hiện tại → skill đã cài. Nếu có nhiều target cùng tên, dừng và liệt kê đường dẫn. Ưu tiên source canonical; không sửa bản cài sinh ra từ source khác.
 2. Đọc `SKILL.md` và chỉ những reference được liên kết có chứa model table, profile, parent gate, role contract hoặc dispatch policy. Lập danh sách file nguồn và digest theo [proposal contract](references/proposal-contract.md).
-3. Lấy danh sách model cùng reasoning từ metadata/capability trực tiếp của Codex host. Bài công bố, kiến thức nhớ lại hoặc tên model trong skill không chứng minh host dispatch được. Không có capability thì trả `BLOCKED_HOST_CAPABILITY` và dừng.
-4. Đọc đầy đủ skill `ch-research` và áp dụng workflow của nó để nghiên cứu thông tin mới nhất trong tập model host đã xác nhận. Nếu thiếu skill, thiếu multi-agent/runtime mà workflow yêu cầu, hoặc model bắt buộc của `ch-research` không khả dụng, trả `BLOCKED_RESEARCH_RUNTIME`; không giả vờ đã research độc lập.
-5. Đọc [evaluation guide](references/evaluation.md), đánh giá từng role/task và profile, rồi xuất proposal đúng schema. Kết thúc lượt mà không sửa file.
+3. Ghi nhận capability host nếu host expose được; nếu không, đánh dấu `capability_status: UNVERIFIED` và tiếp tục AUDIT. Không tuyên bố model/effort dispatch được khi chưa xác minh. Proposal `CHANGE` khi capability `UNVERIFIED` chỉ hợp lệ nếu skill đích preflight/fail-closed toàn bộ model và reasoning của parent lẫn mọi worker trong profile trước dispatch đầu tiên. Chỉ gate parent là chưa đủ; lỗi dispatch sau khi pipeline bắt đầu không phải preflight. Nếu thiếu gate toàn profile, đánh dấu row phụ thuộc model dispatch là `BLOCKED`. AUDIT là nghiên cứu và đề xuất, không phải lần chạy target.
+4. Phân loại target trước khi đánh giá:
+   - `default`: target không có các profile `low`, `med`/`medium`, `high`; đánh giá các role/model/reasoning hiện có như bình thường và không tự tạo ba level.
+   - `profiled`: target có ít nhất một profile trong nhóm trên; giữ đúng các profile target đã định nghĩa, chuẩn hóa `medium` thành nhãn báo cáo `med`, rồi đánh giá riêng từng profile.
+
+5. Đọc đầy đủ skill `ch-research` và áp dụng workflow của nó để nghiên cứu thông tin mới nhất. Giao các nhánh tìm nguồn giá, bằng chứng hiệu năng theo task, thực tế sử dụng và phản biện cho các researcher độc lập; kiểm tra chéo các claim quan trọng. Nếu thiếu skill, thiếu multi-agent/runtime mà workflow yêu cầu, hoặc model bắt buộc của `ch-research` không khả dụng, trả `BLOCKED_RESEARCH_RUNTIME`; không giả vờ đã research độc lập.
+6. Đọc [evaluation guide](references/evaluation.md), dựng ma trận bằng chứng và chi phí cho từng role/task theo `default` hoặc từng profile. Chỉ xuất proposal theo [proposal contract](references/proposal-contract.md) sau khi có verdict cho giá, hiệu năng, độ phù hợp, giới hạn và mức chắc chắn của từng row. Kết thúc lượt mà không sửa file.
 
 ### Approval gate
 
@@ -54,9 +57,9 @@ Không tự chuyển từ AUDIT sang APPLY trong cùng lượt, kể cả khi k�
 
 ## Quy tắc profile và parent
 
-Giữ nguyên semantics profile của target. Chỉ đánh giá `low/med/high` nếu target đã có các profile đó. Slot trống dùng status `UNASSIGNED` cho tới khi proposal được duyệt.
+Giữ nguyên semantics profile của target. Target không có profile là một target `default`, không bị ép thành ba level. Target có profile là một target `profiled`; đánh giá riêng từng profile mà target thực sự có, kể cả khi chỉ có một hoặc hai profile.
 
-Parent phải đủ năng lực điều phối và tích hợp worker của profile. Khi target có parent model gate, cập nhật gate cùng row parent; không tự hạ level, đổi parent hiện tại, hoặc thêm fallback để né gate.
+Trong proposal, parent vẫn phải đủ năng lực điều phối và tích hợp worker của từng profile. Khi target có parent model gate, cập nhật gate cùng row parent; không tự hạ level, đổi parent hiện tại, hoặc thêm fallback để né gate. Việc parent hiện tại trên host có khớp gate hay không là preflight của skill đích khi được gọi, không phải điều kiện để updater tạo AUDIT proposal.
 
 ## Giới hạn
 
@@ -67,7 +70,9 @@ Không audit rồi tự sửa model nội bộ của `ch-research` trong cùng l
 | Sai | Cách xử lý |
 |---|---|
 | Sửa ngay vì user đang gấp | Xuất proposal và dừng ở approval gate |
-| Suy model khả dụng từ release note | Dùng capability host hoặc block |
+| Suy model khả dụng từ release note | Ghi rõ capability `UNVERIFIED`, dùng nguồn chính thức và không tuyên bố host đã dispatch được |
 | Apply proposal cũ lên file mới | So digest trước mutation |
 | Đổi model nhưng quên parent gate/test | Liệt kê coupled edits trong từng row |
-| Dùng benchmark tổng quát cho role chuyên biệt | Ghi không so sánh trực tiếp hoặc giữ `KEEP` |
+| Dùng benchmark tổng quát cho role chuyên biệt | Ghi không so sánh trực tiếp; ưu tiên eval của chính workflow, hoặc giữ `KEEP`/`BLOCKED` |
+| Coi đơn giá API là chi phí Codex | Xác định billing surface trước, chỉ dùng giá API làm proxy khi giải thích rõ giới hạn |
+| Gọi model rẻ hơn là tối ưu | So chi phí cho một đầu ra đạt chuẩn, gồm retries và review |

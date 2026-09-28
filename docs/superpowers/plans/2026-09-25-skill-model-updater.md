@@ -10,7 +10,7 @@
 
 ## Global Constraints
 
-- Chỉ xét model và reasoning được Codex host hiện tại xác nhận là khả dụng.
+- Ghi capability host là `VERIFIED`/`UNVERIFIED`; không claim dispatch khi chưa được xác nhận, nhưng capability thiếu không chặn AUDIT.
 - `ch-research` là dependency bắt buộc của pha AUDIT.
 - AUDIT không sửa file; APPLY cần proposal ID được duyệt và digest còn khớp.
 - `policy.allow_implicit_invocation` phải là `false`.
@@ -69,7 +69,7 @@ agents: codex
 Body phải định nghĩa chính xác:
 
 ```text
-AUDIT (mặc định): resolve canonical target → snapshot files/digest → verify host capability
+AUDIT (mặc định): resolve canonical target → snapshot files/digest → record host capability as VERIFIED/UNVERIFIED
 → load ch-research → evaluate roles/profiles → emit proposal ID → stop without edits.
 
 APPLY: require proposal ID + approved rows → recompute digest → STALE_PROPOSAL on mismatch
@@ -79,7 +79,6 @@ APPLY: require proposal ID + approved rows → recompute digest → STALE_PROPOS
 Các hard gate bắt buộc:
 
 - `BLOCKED_TARGET` khi target thiếu, mơ hồ hoặc không có model contract;
-- `BLOCKED_HOST_CAPABILITY` khi không xác minh được model/reasoning dispatch được;
 - `BLOCKED_RESEARCH_RUNTIME` khi không thể chạy đúng `ch-research`;
 - `STALE_PROPOSAL` khi digest thay đổi;
 - cấm sửa file ở AUDIT;
@@ -93,7 +92,7 @@ Entry point phải link tới `references/evaluation.md` khi đánh giá role v�
 
 `references/evaluation.md` phải bao gồm:
 
-- thứ tự bằng chứng: host capability → tài liệu OpenAI chính thức → benchmark/đánh giá độc lập có cấu hình so sánh được → inference ghi nhãn;
+- thứ tự bằng chứng: capability host (hoặc ghi rõ `UNVERIFIED`) → tài liệu OpenAI chính thức → benchmark/đánh giá độc lập có cấu hình so sánh được → inference ghi nhãn;
 - ma trận đánh giá role: reasoning complexity, context/ràng buộc, tool use, hậu quả lỗi, đường găng/song song, latency/cost, nhiệm vụ parent/reviewer;
 - cách chọn effort theo task thay vì theo nhãn level;
 - quy tắc `low/med/high`: giữ semantics của skill đích, không tự áp profile vào skill không có profile;
@@ -114,12 +113,7 @@ host_capability_evidence: nguồn metadata host
 approved_scope: all hoặc danh sách row_id
 ```
 
-Bảng proposal dùng cột:
-
-```text
-row_id | profile | role/task | current model/effort | proposed model/effort |
-status | confidence | evidence | coupled edits
-```
+Bảng proposal dùng cột role/profile, cấu hình hiện tại và đề xuất, billing surface, trạng thái, hiệu năng/độ phù hợp, chi phí/task, đánh đổi, confidence, evidence và coupled edits.
 
 Status chỉ gồm `KEEP`, `CHANGE`, `UNASSIGNED`, `BLOCKED`. Cú pháp apply chuẩn:
 
@@ -149,7 +143,7 @@ policy:
 Run:
 
 ```bash
-rg -n 'BLOCKED_TARGET|BLOCKED_HOST_CAPABILITY|BLOCKED_RESEARCH_RUNTIME|STALE_PROPOSAL|allow_implicit_invocation|ch-research' skills/ch-updating-skill-models
+rg -n 'BLOCKED_TARGET|BLOCKED_RESEARCH_RUNTIME|STALE_PROPOSAL|UNVERIFIED|allow_implicit_invocation|ch-research' skills/ch-updating-skill-models
 ```
 
 Expected: mỗi gate/dependency xuất hiện đúng nơi; policy là `false`.
@@ -200,14 +194,7 @@ Expected: cả ba lệnh pass.
 
 - [x] **Step 4: Review tình huống hành vi bằng contract**
 
-Đối chiếu toàn bộ skill với sáu case trong spec:
-
-1. AUDIT không có mutation.
-2. Thiếu host capability bị block.
-3. APPLY chỉ nhận proposal ID và rows đã duyệt.
-4. Digest đổi gây `STALE_PROPOSAL` trước mutation.
-5. Target mơ hồ/thiếu contract bị block.
-6. Không tự audit rồi sửa `ch-research` trong cùng lượt.
+Đối chiếu toàn bộ skill với các case trong spec: AUDIT không mutation; capability thiếu ghi `UNVERIFIED` nhưng không tự claim dispatch; candidate không có preflight toàn profile an toàn cho parent và worker bị `BLOCKED`; APPLY cần proposal ID/scope và digest hiện hành; target mơ hồ/thiếu contract bị block; không tự audit rồi sửa `ch-research`; không nhầm giá API với phí subscription; giữ đúng mode/profile của target.
 
 Expected: mỗi case có một đường xử lý duy nhất, không có fallback trái gate.
 
@@ -216,7 +203,7 @@ Expected: mỗi case có một đường xử lý duy nhất, không có fallbac
 Chạy lại đúng ba evaluator fresh-context của RED, lần này cung cấp toàn bộ skill mới và references. Expected:
 
 1. evaluator chỉ tạo proposal và không sửa target trước approval;
-2. evaluator trả `BLOCKED_HOST_CAPABILITY` khi host không cung cấp capability;
+2. evaluator ghi `UNVERIFIED`, không claim dispatch và vẫn tiếp tục AUDIT khi thiếu capability metadata; worker rows `BLOCKED` nếu thiếu preflight toàn profile trước dispatch;
 3. evaluator trả `STALE_PROPOSAL` khi digest đổi.
 
 Đọc thủ công từng output. Nếu evaluator tìm được loophole, sửa tối thiểu câu chữ liên quan rồi chạy lại case đó cho tới khi hành vi hội tụ.
@@ -292,6 +279,24 @@ Nếu identity không rỗng và staged diff đúng phạm vi, commit với mess
 feat: add Codex skill model updater
 ```
 
+
+- [x] Task 4: Làm rõ capability chưa xác minh và so sánh chi phí
+
+**Files:**
+
+- Modify: `skills/ch-updating-skill-models/SKILL.md`
+- Modify: `skills/ch-updating-skill-models/references/evaluation.md`
+- Modify: `skills/ch-updating-skill-models/references/proposal-contract.md`
+- Modify: thiết kế, plan và summary hiện có
+
+- [x] Step 1: Chuyển capability thiếu từ hard block sang `UNVERIFIED`; yêu cầu preflight/fail-closed toàn profile cho parent và mọi worker trước dispatch đầu tiên.
+- [x] Step 2: Phân biệt target billing với billing surface từng model và không quy đổi API thành phí subscription.
+- [x] Step 3: Pressure review GREEN; vá loophole worker dispatch bằng gate toàn profile trước dispatch đầu tiên.
+- [x] Step 4: Chạy validator Codex-only, installer regression và `git diff --check`.
+- [x] Step 5: Rà toàn bộ diff và xác nhận spec/summary khớp với kết quả.
+
 ## Kết quả
 
 [Summary triển khai](../summaries/2026-09-25-skill-model-updater-summary.md)
+
+**Kết quả:** AUDIT tiếp tục khi host không expose metadata nhưng ghi `UNVERIFIED`; thay đổi có điều kiện cần preflight/fail-closed toàn profile cho parent và workers trước dispatch; proposal tách billing surface của target với billing surface của từng model; evaluator không suy giá subscription từ API.

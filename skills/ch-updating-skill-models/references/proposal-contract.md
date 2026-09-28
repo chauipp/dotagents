@@ -19,30 +19,41 @@ Ghi cả ledger vào proposal để APPLY chỉ ra file nào đổi. File đư�
 ## Proposal identity
 
 ```text
-proposal_id: model-update-<target-name>-<YYYYMMDD>-<12-ký-tự-đầu-source_digest>
+proposal_id: model-update-<target-name>-<YYYYMMDDTHHMMSSZ>-<12-ký-tự-đầu-source_digest>-<4-ký-tự-ngẫu-nhiên>
 target_path: <canonical path>
 research_date: YYYY-MM-DD
 source_digest: <sha256>
 source_ledger:
   <relative path>: <sha256>
-host_capability_evidence: <metadata/tool và thời điểm xác minh>
+target_mode: default | profiled
+profiles_evaluated: [default] | [các profile thực sự có trong target, ví dụ low, med, high]
+capability_status: VERIFIED | UNVERIFIED
+host_capability_evidence: <metadata/tool và thời điểm xác minh, hoặc lý do UNVERIFIED>
+target_billing_surface: <Codex subscription/credits | Codex token billing | API | UNKNOWN>
+pricing_checked_at: YYYY-MM-DD
+pricing_sources: <link chính thức hoặc UNKNOWN>
+workload_basis: <usage trace/rubric thực tế hoặc giả định kịch bản>
 ```
 
-Proposal ID định danh snapshot và ngày research. Không tái sử dụng ID sau khi audit lại.
+Proposal ID định danh riêng từng lượt AUDIT, kể cả khi cùng ngày và cùng source digest. Tạo hậu tố ngẫu nhiên mới cho mỗi lượt; không tái sử dụng ID sau khi audit lại.
 
 ## Rows
 
-| row_id | profile | role/task | current model/effort | proposed model/effort | status | confidence | evidence | coupled edits |
-|---|---|---|---|---|---|---|---|---|
+| row_id | profile | role/task | current → proposed model/effort | billing surface (current → proposed) | status | task fit & performance | cost/task | trade-off & alternative | confidence | evidence | coupled edits |
+|---|---|---|---|---|---|---|---|---|---|---|---|
 
-`row_id` ổn định trong proposal, dạng `<profile-or-default>:<role-id>`. Status:
+`row_id` ổn định trong proposal, dạng `<profile-or-default>:<role-id>`. Với target `default`, dùng profile `default`; với target `profiled`, dùng đúng profile target có và không tự thêm profile thiếu. Status:
 
 - `KEEP`: giữ cấu hình; không được chọn để APPLY.
 - `CHANGE`: đổi model và/hoặc reasoning.
 - `UNASSIGNED`: slot trống có đề xuất mới.
 - `BLOCKED`: chưa đủ capability/evidence; không được APPLY.
 
-`evidence` trỏ claim/source gần nhất và nêu giới hạn. `coupled edits` liệt kê parent gate, profile status, thông báo block, example, reference hoặc test phải đổi cùng row.
+`capability_status: UNVERIFIED` không chứng minh dispatch được. Row đổi model/effort chỉ có thể là `CHANGE` nếu target có preflight/fail-closed toàn profile cho parent và mọi worker trước dispatch đầu tiên; chỉ kiểm tra parent không đủ. Nếu thiếu gate này, dùng `BLOCKED` và ghi rõ capability nào cần xác minh. `target_billing_surface` mô tả cách workload của target được tính phí; không chứng minh giá của một model cụ thể. Mỗi row phải ghi billing surface riêng của model hiện tại và ứng viên. Nếu dùng giá API làm proxy cho Codex subscription/credits, gắn nhãn proxy và `NOT_COMPARABLE`; không báo proxy thành khoản tiết kiệm thực trả. `evidence` trỏ claim/source gần nhất và nêu giới hạn. `coupled edits` liệt kê parent gate, profile status, thông báo block, example, reference hoặc test phải đổi cùng row.
+
+Mỗi row phải dẫn tới một **evidence card** với: billing surface, nguồn giá và đơn vị/tier cho cả hai lựa chọn; token/attempt, retry, cache, tool fee và pass rate (đo được, ước tính hoặc `UNKNOWN`); cost-per-attempt và cost-per-pass/credits-per-pass nếu tính được; metric chất lượng và độ trễ trên cùng task/harness; nguồn ủng hộ lẫn phản biện; verdict phù hợp profile; giới hạn còn thiếu. Ghi riêng `NOT_COMPARABLE` khi nguồn khác billing surface hoặc benchmark khác cấu hình. Row `KEEP` cũng cần lý do giữ; row `UNASSIGNED` cần ngưỡng pass dự kiến để mở profile.
+
+Trước khi kết thúc proposal, thêm bảng so **toàn workflow theo profile**: tổng chi phí/tác vụ đạt chuẩn hoặc `UNKNOWN`, thời gian theo đường găng, điểm/rubric chất lượng, lỗi nghiêm trọng, delta với cấu hình hiện tại và với profile liền kề nếu có. Tách số đo khỏi kịch bản giả định. Nếu chưa có usage trace/eval, cung cấp kế hoạch A/B ngắn với mẫu task, metric, ngưỡng quyết định và dữ liệu cần ghi; không gán số chính xác giả tạo.
 
 ## Approval
 

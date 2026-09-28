@@ -4,7 +4,7 @@
 
 Tạo skill explicit-only `$ch-updating-skill-models` để đánh giá lại cấu hình model và reasoning của một skill Codex có parent/subagent, đưa ra đề xuất có bằng chứng, rồi chỉ áp dụng đề xuất sau khi người dùng duyệt rõ một phiên bản cụ thể.
 
-Skill chỉ xét các model và reasoning thực sự khả dụng trên Codex host tại thời điểm chạy. Model chỉ mới được công bố nhưng host chưa hỗ trợ không được đề xuất làm cấu hình chạy.
+Skill phân biệt capability đã được host xác nhận với capability chưa quan sát được. Khi host không expose metadata, AUDIT vẫn nghiên cứu và tạo proposal có nhãn `UNVERIFIED`, nhưng không được khẳng định ứng viên dispatch được; mọi thay đổi có điều kiện phải có preflight/fail-closed toàn profile cho parent và mọi worker trước dispatch đầu tiên; chỉ gate parent hoặc nhận lỗi dispatch sau khi pipeline chạy không đủ, nếu không thì row bị `BLOCKED`. Model chỉ mới được công bố không được trình bày như capability đã được host xác nhận.
 
 ## Cú pháp và phạm vi
 
@@ -39,15 +39,13 @@ Skill mới có hai pha: `AUDIT` và `APPLY`. Một lượt audit không đượ
 
 Không ép `low/med/high` lên một skill không có khái niệm profile. Với skill có profile, giữ nguyên ý nghĩa chất lượng/phạm vi hiện tại của từng level.
 
-### 2. Xác minh khả dụng trên Codex host
+### 2. Ghi nhận capability của Codex host
 
-Lấy danh sách model và reasoning từ metadata/capability mà Codex host hiện tại cung cấp. Đây là cổng bắt buộc trước khi đề xuất.
-
-Nếu không xác minh được danh sách model thực sự dispatch được, trả `BLOCKED_HOST_CAPABILITY`. Báo dữ liệu còn thiếu và không suy đoán model khả dụng từ bài công bố, tên file hoặc kiến thức cũ.
+Lấy danh sách model và reasoning từ metadata/capability của Codex host nếu host expose. Ghi `capability_status: VERIFIED` hoặc `UNVERIFIED`; không dùng việc không đọc được model cha hiện tại để chặn AUDIT. `UNVERIFIED` không chứng minh ứng viên dispatch được. Proposal đổi cấu hình khi capability chưa xác minh phải có preflight/fail-closed toàn profile cho parent và mọi worker trước dispatch đầu tiên; nếu không thể bảo đảm thì row là `BLOCKED`.
 
 ### 3. Research bằng `ch-research`
 
-Đọc và áp dụng workflow của `ch-research` để nghiên cứu thông tin mới nhất tại ngày audit. Câu hỏi trung tâm phải là: trong tập model/reasoning đã được host xác nhận, cấu hình nào phù hợp nhất với từng vai trò và từng profile của skill đích?
+Đọc và áp dụng workflow của `ch-research` để nghiên cứu thông tin mới nhất tại ngày audit. Câu hỏi trung tâm phải là: theo bằng chứng hiện tại, cấu hình nào phù hợp nhất với từng vai trò/profile và capability host đã được xác nhận hay chưa? Nếu capability chưa xác minh, phân biệt rõ ứng viên nghiên cứu với cấu hình đã biết là dispatch được.
 
 Nghiên cứu phải đối chiếu:
 
@@ -77,10 +75,10 @@ Reasoning được chọn theo task, không mặc định mọi role ở level c
 
 ### 5. Proposal
 
-Trả một proposal có ID ổn định, ngày research và digest skill đích. Proposal gồm:
+Trả một proposal có ID duy nhất theo từng lượt audit, ngày research, trạng thái capability và digest skill đích. Proposal gồm:
 
-| Profile | Role/task | Hiện tại | Đề xuất | Reasoning | Trạng thái | Lý do và bằng chứng |
-|---|---|---|---|---|---|---|
+| Profile | Role/task | Hiện tại → đề xuất | Billing surface hiện tại → đề xuất | Trạng thái | Hiệu năng & độ phù hợp | Chi phí/task | Đánh đổi & lựa chọn khác | Confidence | Bằng chứng | Coupled edits |
+|---|---|---|---|---|---|---|---|---|---|---|
 
 `Trạng thái` dùng một trong các giá trị:
 
@@ -91,6 +89,10 @@ Trả một proposal có ID ổn định, ngày research và digest skill đích
 
 Proposal phải ghi rõ:
 
+- `target_mode` là `default` hoặc `profiled`, và chỉ các profile thực sự có trong target;
+- capability host là `VERIFIED`/`UNVERIFIED`, không khẳng định dispatch khi chưa xác minh;
+- billing surface của target và riêng từng lựa chọn model; giá API chỉ là proxy có nhãn, không phải phí Codex subscription;
+- chi phí trên một đầu ra đạt chuẩn hoặc `UNKNOWN`, giả định workload, retries/review, và nguồn;
 - thay đổi parent gate tương ứng;
 - file/đoạn nào sẽ bị sửa nếu được duyệt;
 - khác biệt về chất lượng, tốc độ và chi phí nếu có bằng chứng;
@@ -153,11 +155,13 @@ Không thêm script parser vì cấu trúc Markdown của các skill không đ�
 Kiểm tra tối thiểu bằng các tình huống:
 
 1. Audit `ch-writing-prompts-map` tạo proposal nhưng không sửa file.
-2. Host không cung cấp capability model thì trả `BLOCKED_HOST_CAPABILITY`.
+2. Host không expose capability thì ghi `UNVERIFIED` và tiếp tục AUDIT; không claim dispatch. Nếu không có target-wide preflight/fail-closed cho parent và worker models trước dispatch đầu tiên, candidate row phải `BLOCKED`.
 3. Duyệt proposal đúng digest thì chỉ sửa các hàng được chọn và các gate phụ thuộc.
 4. Skill đích đổi sau audit thì trả `STALE_PROPOSAL`.
 5. Tên skill mơ hồ hoặc thiếu model contract thì dừng với hướng dẫn cụ thể.
 6. Skill không tự audit và sửa `ch-research` trong cùng lượt.
+7. Không dùng giá API để kết luận phí/tiết kiệm Codex subscription; giá và chi phí task thiếu dữ liệu được ghi `UNKNOWN` hoặc `ESTIMATE`.
+8. Target không có profile được đánh giá ở mode `default`; target có một hay hai profile chỉ đánh giá các profile hiện có.
 
 Validator của `skill-creator` được chạy cho skill mới. Installer regression phải xác nhận skill được cài cho Codex và không tự kích hoạt.
 
