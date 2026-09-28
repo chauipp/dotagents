@@ -176,6 +176,34 @@ git -C ~/dotagents pull --ff-only
 
 Với dự án cài per-project, thêm `--project /đường/dẫn/tới/project` vào cả hai lệnh. Chỉ skill có tên trong manifest của đúng thư mục đích mới được ghi đè hoặc xóa.
 
+## Gỡ cài đặt và khôi phục
+
+Cần Python 3.11+ cho ledger và uninstaller. Chạy xem trước rồi gỡ đúng phạm vi:
+
+```bash
+./uninstall.sh --project /đường/dẫn/tới/project --all --check
+./uninstall.sh --project /đường/dẫn/tới/project --all
+./uninstall.sh --codex --check
+./uninstall.sh --codex
+```
+
+Project mặc định chọn cả hai agent; global không có selector thì chọn các thư mục config đang tồn tại. Có thể dùng `--claude`, `--codex`, `--all`, `--rules-only`. Global tôn trọng `CODEX_HOME` và `CLAUDE_CONFIG_DIR` như installer. Gỡ project không thay đổi global.
+
+Uninstaller bỏ block rules dotagents và skill có tên trong manifest, giữ rules bên ngoài, skill riêng và `.system/`. Gỡ một agent chỉ bỏ entry ignore của agent đó. Marker/manifest/path/ledger không hợp lệ khiến lệnh dừng trước khi gỡ. Thiếu manifest thì giữ skill chưa xác định ownership; script không đoán theo tên trong kit. Script không thay đổi Git index hoặc commit; ignore không tự bỏ theo dõi file đã tracked.
+
+Installer mới ghi `.dotagents-state.json`: nguồn gốc file rules và giá trị trước/sau của các key config thực sự thay đổi. Uninstaller chỉ khôi phục key còn khớp giá trị installer đã ghi. Key người dùng đã sửa sau cài được giữ và báo `GIỮ`; ledger của key đó còn lại để không mất nguồn gốc. Bản cài cũ thiếu ledger vẫn gỡ được block rules/skill có manifest, nhưng giữ config chưa chứng minh ownership. Chạy lại installer trên bản cài cũ không thể suy ra giá trị trước lần cài đầu tiên.
+
+Mỗi lần gỡ có thay đổi tạo backup riêng, mặc định tại `~/.local/state/dotagents/uninstall/`; dùng `--backup-dir DIR` để đổi nơi lưu. Backup chứa cả skill kit đã sửa và các file trước gỡ; cần giữ riêng tư vì config có thể có dữ liệu nhạy cảm. Output nêu đường dẫn backup và lệnh restore:
+
+```bash
+./uninstall.sh --restore /đường/dẫn/backup --check
+./uninstall.sh --restore /đường/dẫn/backup
+```
+
+Restore kiểm tra toàn bộ trước khi ghi, chỉ khôi phục đích còn khớp trạng thái trước/sau uninstall và từ chối ghi đè dữ liệu đã sửa tiếp. Backup vẫn được giữ sau restore. Nếu gỡ lỗi giữa chừng, dùng journal trong backup để restore phần đã đổi; script báo gỡ chưa hoàn tất.
+
+Nội dung ngoài marker được giữ nguyên, kể cả dòng trắng installer từng nối thêm. File rules chỉ bị xóa khi còn rỗng và ledger chứng minh installer đã tạo file. Config rỗng, các thư mục container và backup cũ được giữ; không xóa toàn bộ thư mục config của agent.
+
 ## Cấu trúc
 
 ```
@@ -184,6 +212,8 @@ rules/common.md        nguồn rules chung của hai agent
 claude/CLAUDE.md       overlay rules riêng Claude Code
 codex/AGENTS.md        overlay rules riêng Codex
 install.sh
+uninstall.sh           gỡ theo ownership, có check và backup/restore
+scripts/dotagents_lifecycle.py  ledger và thao tác gỡ/khôi phục
 SUPERPOWERS-LICENSE    MIT, cho 14 skill copy từ obra/superpowers
 ```
 

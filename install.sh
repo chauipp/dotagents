@@ -335,10 +335,13 @@ ignore_kit_skills() {
     printf '%s\n' "$b"
     printf '# Skill do ~/dotagents cài — mỗi máy tự chạy install.sh --project.\n'
     printf '# Skill riêng của dự án nằm cạnh đây thì VẪN được commit bình thường.\n'
-    while IFS= read -r name; do
-      [ -n "$name" ] && printf '.claude/skills/%s/\n' "$name"
-    done < "$manifest"
-    printf '.claude/skills/.dotagents-manifest\n'
+    printf '.dotagents-state.json\n'
+    if [ -f "$manifest" ]; then
+      while IFS= read -r name; do
+        [ -n "$name" ] && printf '.claude/skills/%s/\n' "$name"
+      done < "$manifest"
+      printf '.claude/skills/.dotagents-manifest\n'
+    fi
     if [ -f "$codex_manifest" ]; then
       while IFS= read -r name; do
         [ -n "$name" ] && printf '.codex/skills/%s/\n' "$name"
@@ -430,6 +433,21 @@ tune_codex_config() {
   return 0
 }
 
+# Ledger snapshots stay in installer temp storage; --check never records state.
+snapshot_install_state() {
+  local agent="$1" root="$2"
+  local config_args=()
+  [ "$MODE" = global ] && [ "$RULES_ONLY" = 0 ] && config_args+=(--config)
+  python3 "$KIT_DIR/scripts/dotagents_lifecycle.py" snapshot "$root" "$agent" "$RULES_TMP_DIR/$agent-before.json" "${config_args[@]}"
+}
+
+record_install_state() {
+  local agent="$1" root="$2"
+  local config_args=()
+  [ "$MODE" = global ] && [ "$RULES_ONLY" = 0 ] && config_args+=(--config)
+  python3 "$KIT_DIR/scripts/dotagents_lifecycle.py" record "$root" "$agent" "$RULES_TMP_DIR/$agent-before.json" "${config_args[@]}"
+}
+
 RULES_TMP_DIR=""
 trap '[ -z "$RULES_TMP_DIR" ] || rm -rf "$RULES_TMP_DIR"' EXIT
 
@@ -458,6 +476,8 @@ if [ "$MODE" = project ]; then
     [ "$WANT_CODEX" = 1 ] && report_rules_check codex "$TARGET/AGENTS.md" "$CODEX_RULES_SOURCE"
     exit 0
   fi
+  [ "$WANT_CLAUDE" = 1 ] && snapshot_install_state claude "$TARGET"
+  [ "$WANT_CODEX" = 1 ] && snapshot_install_state codex "$TARGET"
   echo "Cài $project_scope"
   if [ "$WANT_CLAUDE" = 1 ]; then
     merge_rules "$TARGET/CLAUDE.md" "$CLAUDE_RULES_SOURCE"
@@ -468,7 +488,7 @@ if [ "$MODE" = project ]; then
   if [ "$RULES_ONLY" = 0 ]; then
     [ "$WANT_CLAUDE" = 1 ] && copy_skills "$TARGET/.claude/skills" claude
     [ "$WANT_CODEX" = 1 ] && copy_skills "$TARGET/.codex/skills" codex
-    [ -d "$TARGET/.git" ] && ignore_kit_skills "$TARGET"
+    [ -e "$TARGET/.git" ] && ignore_kit_skills "$TARGET"
     # Cấu hình machine-level của Claude chỉ liên quan khi cài Claude vào project.
     if [ "$WANT_CLAUDE" = 1 ]; then
       if [ -f "$CLAUDE_DIR/settings.json" ] && python3 -c "
@@ -492,6 +512,8 @@ sys.exit(0 if os.path.exists(p) and 'playwright' in json.load(open(p)).get('mcpS
   else
     echo "  skills -> bỏ qua (--rules-only)"
   fi
+  [ "$WANT_CLAUDE" = 1 ] && record_install_state claude "$TARGET"
+  [ "$WANT_CODEX" = 1 ] && record_install_state codex "$TARGET"
 else
   prepare_rules_sources || exit 1
   if [ "$RULES_ONLY" = 0 ]; then
@@ -506,6 +528,8 @@ else
     [ "$WANT_CODEX" = 1 ] && report_rules_check codex "$CODEX_DIR/AGENTS.md" "$CODEX_RULES_SOURCE"
     exit 0
   fi
+  [ "$WANT_CLAUDE" = 1 ] && snapshot_install_state claude "$CLAUDE_DIR"
+  [ "$WANT_CODEX" = 1 ] && snapshot_install_state codex "$CODEX_DIR"
   if [ "$WANT_CLAUDE" = 1 ]; then
     echo "Cài CLAUDE CODE vào $CLAUDE_DIR"
     mkdir -p "$CLAUDE_DIR"
@@ -531,6 +555,8 @@ else
       echo "  skills -> bỏ qua (--rules-only)"
     fi
   fi
+  [ "$WANT_CLAUDE" = 1 ] && record_install_state claude "$CLAUDE_DIR"
+  [ "$WANT_CODEX" = 1 ] && record_install_state codex "$CODEX_DIR"
 fi
 
 echo
