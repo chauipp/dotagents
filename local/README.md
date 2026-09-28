@@ -1,12 +1,13 @@
-# Hai profile viết prompt map cho Codex
+# Skill viết prompt map theo level cho Codex
 
-Hai skill nằm trong danh mục canonical `skills/` và có metadata `agents: codex`. Vì thế installer tự cài chúng cùng các skill còn lại ở cả global và project khi chọn Codex; chúng không được cài vào Claude.
+Skill canonical nằm trong danh mục `skills/` và có metadata `agents: codex`. Installer cài nó ở cả global và project khi chọn Codex; không cài vào Claude.
 
-| Skill | Parent cần chọn | Cách gọi |
+| Level | Parent bắt buộc | Cách gọi |
 |---|---|---|
-| ch-writing-prompts-map-sol | gpt-5.6-sol / xhigh | `$ch-writing-prompts-map-sol <yêu cầu map>` |
-| ch-writing-prompts-map-astra | gpt-6-astra / xhigh | `$ch-writing-prompts-map-astra <yêu cầu map>` |
+| `low` | Chưa cấu hình; luôn block | `$ch-writing-prompts-map low <yêu cầu map>` |
+| `med` hoặc `medium` | `gpt-5.6-sol / xhigh` | `$ch-writing-prompts-map med <yêu cầu map>` |
+| `high` | `gpt-6-astra / xhigh` | `$ch-writing-prompts-map high <yêu cầu map>` |
 
-Chọn parent Sol xhigh hoặc Astra xhigh, rồi gọi profile tương ứng. Skill chỉ viết prompt cho map; không dựng map hoặc viết prompt lĩnh vực khác. Metadata opt-in giúp user tự chọn profile. Skill không tự đổi model parent; thiếu model/công cụ phải báo đúng giới hạn. Bản Sol không gọi Astra, kể cả fallback. Không dùng max/ultra mặc định.
+Không truyền level thì mặc định là `med`. Parent phải khớp model/reasoning của level trước khi chạy pipeline. Metadata runtime chính xác được ưu tiên; nếu chỉ hiện nhãn tổng quát hoặc `UNKNOWN`, skill hỏi xác nhận thay vì kết luận model sai. Khi user xác nhận rõ model và reasoning từ bộ chọn, skill tiếp tục ở lần gọi kế tiếp với bằng chứng `USER_CONFIRMED`; xác nhận hết hiệu lực sau lần đó hoặc khi có bằng chứng đổi model. Nếu metadata runtime chính xác cho thấy profile không khớp thì vẫn `BLOCKED_MODEL`. Skill không tự đổi parent hoặc fallback.
 
-Hai profile giữ chung nội dung trong `references/workflow.md` và `references/roles.md`; cập nhật phần dùng chung ở cả hai nơi và kiểm tra parity bằng so sánh file. Bảng model/policy riêng nằm trong từng `SKILL.md`.
+Skill chỉ viết prompt cho map; không dựng map hoặc viết prompt lĩnh vực khác. Hai alias `med` và `medium` dùng cùng profile Sol.

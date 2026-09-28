@@ -123,15 +123,23 @@ grep -q 'brainstorming' "$TMP_DIR/global-collision-output" || fail 'Global colli
 grep -qx 'global skill' "$global_claude/skills/brainstorming/SKILL.md" \
   || fail 'Global collision changed the custom skill'
 
-# Prompt-map profiles are in the canonical catalog and only installed for Codex.
-for name in ch-writing-prompts-map-sol ch-writing-prompts-map-astra; do
-  [ -f "$KIT_DIR/skills/$name/SKILL.md" ] || fail "Missing Codex profile: $name"
-  grep -qxF "$name" "$project/.codex/skills/.dotagents-manifest" || fail "Codex profile not installed: $name"
-  if grep -qxF "$name" "$project/.claude/skills/.dotagents-manifest"; then fail "Codex profile leaked into Claude: $name"; fi
+# Prompt-map skill is canonical and only installed for Codex.
+name=ch-writing-prompts-map
+[ -f "$KIT_DIR/skills/$name/SKILL.md" ] || fail "Missing Codex skill: $name"
+grep -qxF "$name" "$project/.codex/skills/.dotagents-manifest" || fail "Codex skill not installed: $name"
+if grep -qxF "$name" "$project/.claude/skills/.dotagents-manifest"; then fail "Codex skill leaked into Claude: $name"; fi
+for old_name in ch-writing-prompts-map-sol ch-writing-prompts-map-astra; do
+  [ ! -e "$KIT_DIR/skills/$old_name" ] || fail "Legacy profile still present: $old_name"
+  if grep -qxF "$old_name" "$project/.codex/skills/.dotagents-manifest"; then fail "Legacy profile installed: $old_name"; fi
 done
-cmp "$KIT_DIR/skills/ch-writing-prompts-map-sol/references/workflow.md" \
-  "$KIT_DIR/skills/ch-writing-prompts-map-astra/references/workflow.md" || fail 'Profile workflow drift'
-cmp "$KIT_DIR/skills/ch-writing-prompts-map-sol/references/roles.md" \
-  "$KIT_DIR/skills/ch-writing-prompts-map-astra/references/roles.md" || fail 'Profile role drift'
+grep -q 'BLOCKED_MODEL' "$KIT_DIR/skills/$name/SKILL.md" || fail 'Parent model gate is missing'
+grep -q 'AWAITING_PARENT_CONFIRMATION' "$KIT_DIR/skills/$name/SKILL.md" || fail 'Incomplete parent metadata must request confirmation'
+grep -q 'USER_CONFIRMED' "$KIT_DIR/skills/$name/SKILL.md" || fail 'Confirmed UI parent evidence is missing'
+grep -q 'tài liệu nguồn không phải xác nhận UI' "$KIT_DIR/skills/$name/SKILL.md" || fail 'Attached documents must not count as UI confirmation'
+grep -q 'lần gọi kế tiếp' "$KIT_DIR/skills/$name/SKILL.md" || fail 'Parent confirmation must apply only to the next call'
+grep -q 'Xác nhận hết hiệu lực' "$KIT_DIR/skills/$name/SKILL.md" || fail 'Parent confirmation invalidation is missing'
+grep -q 'gpt-5.6-sol' "$KIT_DIR/skills/$name/SKILL.md" || fail 'Medium profile mapping is missing'
+grep -q 'gpt-6-astra' "$KIT_DIR/skills/$name/SKILL.md" || fail 'High profile mapping is missing'
+grep -q 'UNASSIGNED' "$KIT_DIR/skills/$name/SKILL.md" || fail 'Low profile must remain unassigned'
 
 echo 'PASS: installer preserves custom skills, detects collisions, and supports dry-run checks'

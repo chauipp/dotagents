@@ -1,6 +1,6 @@
 # Quy trình viết prompt map — hợp đồng chung v1
 
-Hai profile Sol/Astra phải giữ cùng nội dung file này và roles.md. Chỉ SKILL.md được khác bảng model và chính sách profile.
+Skill canonical dùng chung workflow và roles; chỉ bảng model/profile trong SKILL.md được chọn theo level.
 
 ## 1. Phạm vi và nguồn dữ liệu
 

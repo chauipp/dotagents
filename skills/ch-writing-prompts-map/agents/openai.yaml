@@ -1,0 +1,6 @@
+interface:
+  display_name: "Ch Writing Prompts Map"
+  short_description: "Viết prompt map theo level model"
+  default_prompt: "Dùng $ch-writing-prompts-map [low|med|medium|high] để viết prompt dựng map; mặc định là med."
+policy:
+  allow_implicit_invocation: false

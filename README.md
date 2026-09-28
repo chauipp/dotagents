@@ -71,7 +71,7 @@ done
 Chỉ liệt kê thư mục có `.dotagents-manifest`, tức thư mục thật sự do dotagents cài — thư mục
 config của account khác trên cùng máy không lọt vào.
 
-Claude cài **27 skill**, còn Codex cài **29 skill**. Mỗi thư mục cài đặt phải có đúng 1 khối rules. Ra 2 khối là file đang chứa rules hai lần —
+Claude cài **27 skill**, còn Codex cài **28 skill**. Mỗi thư mục cài đặt phải có đúng 1 khối rules. Ra 2 khối là file đang chứa rules hai lần —
 xem mục [Lần đầu chạy trên máy đã có sẵn CLAUDE.md](#lần-đầu-chạy-trên-máy-đã-có-sẵn-claudemd).
 Không ra dòng nào là bước 1 chưa chạy được.
 
@@ -177,14 +177,14 @@ Với dự án cài per-project, thêm `--project /đường/dẫn/tới/project
 ## Cấu trúc
 
 ```
-skills/                29 skill ở một nguồn (26 dùng chung + graphify + 2 profile Codex)
+skills/                28 skill ở một nguồn (26 dùng chung + graphify + 1 skill Codex-only)
 claude/CLAUDE.md       rules bản Claude Code
 codex/AGENTS.md        rules bản Codex
 install.sh
 SUPERPOWERS-LICENSE    MIT, cho 14 skill copy từ obra/superpowers
 ```
 
-Installer quét `skills/` và cài vào thư mục đích của từng agent. Mặc định skill áp dụng cho cả Claude Code và Codex; có thể khai báo `agents: codex` trong frontmatter để giới hạn profile map cho Codex. Hai profile map vì thế được cài cả global lẫn project khi chọn Codex.
+Installer quét `skills/` và cài vào thư mục đích của từng agent. Mặc định skill áp dụng cho cả Claude Code và Codex; có thể khai báo `agents: codex` trong frontmatter để giới hạn profile map cho Codex. Skill map theo level vì thế được cài cả global lẫn project khi chọn Codex.
 
 Graphify là một thư mục skill duy nhất với `SKILL.md` điều phối và các workflow riêng tại `references/claude/` và `references/codex/`; tài liệu tham chiếu giống nhau chỉ lưu một bản dưới `references/`.
 
@@ -194,7 +194,7 @@ Thêm agent mới sau này: thêm nhánh cài đặt tương ứng; metadata `ag
 
 **Rules** — mặc định trả lời tiếng Việt; quy định cách dùng quy trình Superpowers, yêu cầu worktree riêng, kiểm UI, cách viết và hoàn tất plan, các skill opt-in, cùng checklist Git identity bắt buộc trước commit và push.
 
-**Skills** — 29 skill nằm trong `skills/`. Claude Code cài 27; Codex cài cả 29. Danh mục bên dưới được chia theo mục đích. Tên skill mở file `SKILL.md` tương ứng.
+**Skills** — 28 skill nằm trong `skills/`. Claude Code cài 27; Codex cài cả 28. Danh mục bên dưới được chia theo mục đích. Tên skill mở file `SKILL.md` tương ứng.
 
 ### Quy trình Superpowers — 14 skill
 
@@ -242,34 +242,34 @@ Chỉ chạy khi người dùng gọi tên skill; nếu không, agent không t�
 | [brutalist-skill](skills/brutalist-skill/SKILL.md) | Tạo giao diện thô mộc, lưới cứng, tương phản mạnh và cảm giác Swiss print/terminal. |
 | [redesign-skill](skills/redesign-skill/SKILL.md) | Audit rồi nâng chất lượng website hoặc app đã có mà vẫn giữ chức năng. |
 
-### Profile viết prompt map — 2 skill chỉ dành cho Codex
+### Skill viết prompt map theo mức model — chỉ dành cho Codex
 
-Hai profile dùng chung tiêu chí viết prompt map, khác model mục tiêu. Chúng chỉ chạy khi gọi đúng tên skill.
+Skill này chỉ chạy khi gọi đúng tên và nhận level ở token đầu tiên: `low`, `med`/ `medium` hoặc `high`. Không truyền level thì mặc định `med`.
 
-| Skill | Dùng để |
-|---|---|
-| [ch-writing-prompts-map-sol](skills/ch-writing-prompts-map-sol/SKILL.md) | Viết hoặc cải thiện prompt xây map/game level, dành cho profile Sol. |
-| [ch-writing-prompts-map-astra](skills/ch-writing-prompts-map-astra/SKILL.md) | Viết hoặc cải thiện prompt xây map/game level, dành cho profile Astra. |
+| Cách gọi | Parent bắt buộc | Trạng thái |
+|---|---|---|
+| `$ch-writing-prompts-map low` | Chưa cấu hình | `BLOCKED_MODEL` ngay |
+| `$ch-writing-prompts-map med` hoặc `medium` | `gpt-5.6-sol` / `xhigh` | khả dụng |
+| `$ch-writing-prompts-map high` | `gpt-6-astra` / `xhigh` | khả dụng |
+
+Parent phải khớp model/reasoning của level trước khi chạy pipeline. Metadata runtime chính xác được ưu tiên; nếu chỉ hiện nhãn tổng quát hoặc `UNKNOWN`, skill hỏi xác nhận thay vì kết luận model sai. Khi user xác nhận rõ model và reasoning từ bộ chọn, skill tiếp tục ở lần gọi kế tiếp và ghi nguồn `USER_CONFIRMED`; xác nhận hết hiệu lực sau lần đó hoặc khi có bằng chứng đổi model. Nếu metadata runtime chính xác cho thấy profile không khớp thì vẫn block. Skill không tự đổi parent hoặc fallback. `low` đang để trống nên luôn block.
+
+Skill chỉ viết prompt cho map; không dựng map hoặc viết prompt lĩnh vực khác.
 
 Superpowers nằm trong `skills/` chứ không cài dưới dạng plugin, để agent bất kỳ có thể lấy repo và gọi skill. Các tham chiếu chéo dùng tên trần (`writing-plans`, không phải `superpowers:writing-plans`). Plugin Superpowers trùng lặp được installer tắt trong `settings.json`; các skill trong repo không tự cập nhật theo marketplace.
 
 ## Gọi skill viết prompt map (Codex)
 
-Hai profile thay thế `writing-prompts` nằm trong `skills/` và được installer cài tự động khi chọn Codex, ở cả phạm vi global lẫn project. Chúng có cùng hợp đồng vai trò và tiêu chí chất lượng, chỉ khác model. Xem [chi tiết hai profile](local/README.md).
-
-Chọn parent **Sol xhigh**, rồi gọi:
+Skill canonical được installer cài tự động khi chọn Codex, ở cả phạm vi global lẫn project. Cách gọi:
 
 ```text
-$ch-writing-prompts-map-sol Dựa vào description và nguồn map, viết prompt hoàn thiện khu được giao đủ công năng, nội thất và tiêu chí nghiệm thu.
+$ch-writing-prompts-map <yêu cầu map>
+$ch-writing-prompts-map med <yêu cầu map>
+$ch-writing-prompts-map medium <yêu cầu map>
+$ch-writing-prompts-map high <yêu cầu map>
 ```
 
-Hoặc chọn parent **Astra xhigh**, rồi gọi:
-
-```text
-$ch-writing-prompts-map-astra Dựa vào description và nguồn map, viết prompt hoàn thiện khu được giao đủ công năng, nội thất và tiêu chí nghiệm thu.
-```
-
-Skill chỉ viết prompt cho map; không dựng map hoặc viết prompt lĩnh vực khác. Metadata opt-in giúp user tự chọn profile. Skill không tự đổi model parent; thiếu model/công cụ phải báo đúng giới hạn. Bản Sol không gọi Astra, kể cả fallback. Không dùng max/ultra mặc định.
+Không truyền level thì mặc định `med`. Parent mismatch phải block trước pipeline; `low` hiện chưa có model nên luôn block.
 
 ## Chạy lại
 
