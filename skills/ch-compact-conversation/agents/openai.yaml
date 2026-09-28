@@ -1,5 +1,5 @@
 interface:
-  display_name: "ch-compact-conversation"
+  display_name: "Ch Compact Conversation"
   short_description: "Condense contiguous conversation logs safely"
   default_prompt: "Use $ch-compact-conversation to condense a contiguous range of conversation logs."
 

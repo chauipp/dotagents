@@ -1,0 +1,4 @@
+interface:
+  display_name: "Ch Verifying UI with Playwright"
+  short_description: "Verify browser-visible UI changes with Playwright"
+  default_prompt: "Use $ch-verifying-ui-with-playwright to verify browser-visible changes in a real Playwright browser before claiming completion."

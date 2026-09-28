@@ -1,5 +1,5 @@
 interface:
-  display_name: "ch-clear-conversation"
+  display_name: "Ch Clear Conversation"
   short_description: "Remove obsolete conversation log entries"
   default_prompt: "Use $ch-clear-conversation to remove obsolete conversation log entries from the current worktree."
 

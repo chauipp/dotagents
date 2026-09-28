@@ -1,0 +1,4 @@
+interface:
+  display_name: "Ch Compacting Conversations"
+  short_description: "Compact obsolete conversation history safely"
+  default_prompt: "Use $ch-compacting-conversations to compact obsolete conversation history in the current worktree."

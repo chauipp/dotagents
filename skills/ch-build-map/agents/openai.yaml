@@ -1,0 +1,4 @@
+interface:
+  display_name: "Ch Build Map"
+  short_description: "Build or edit Unreal Engine maps from spatial specifications"
+  default_prompt: "Use $ch-build-map to build or edit the Unreal Engine map from the supplied spatial specification."
