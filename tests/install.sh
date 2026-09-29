@@ -55,6 +55,8 @@ CLAUDE_CONFIG_DIR="$TMP_DIR/claude-config" CODEX_HOME="$TMP_DIR/codex-config" \
   || fail 'Project reinstall duplicated the managed .gitignore block'
 [ "$(grep -c '^# dotagents:begin conversations$' "$project/.gitignore")" = 1 ] \
   || fail 'Project install did not create exactly one conversation ignore block'
+awk '/^# dotagents:end skills$/ { getline; if ($0 != "") exit 1; found=1 } END { if (!found) exit 1 }' "$project/.gitignore" \
+  || fail 'Managed .gitignore blocks are not separated by a blank line'
 
 grep -q 'dotagents:begin' "$project/CLAUDE.md" || fail 'Project install did not write Claude rules'
 grep -q 'dotagents:begin' "$project/AGENTS.md" || fail 'Project install did not write Codex rules'

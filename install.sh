@@ -322,6 +322,13 @@ copy_skills() {
 # skill riêng của dự án (ch-capturing-what-worked sinh ra) phải đi theo git thì đồng
 # đội clone về mới có. Nên liệt kê đích danh từng tên trong manifest, và ghi lại
 # cả khối mỗi lần cài để danh sách không bị cũ.
+ensure_gitignore_block_spacing() {
+  local file="$1"
+  [ -s "$file" ] || return 0
+  [ -z "$(tail -c 1 "$file")" ] || printf '\n' >> "$file"
+  [ -z "$(tail -n 1 "$file")" ] || printf '\n' >> "$file"
+}
+
 ignore_kit_skills() {
   local target="$1" gi="$1/.gitignore" manifest="$1/.claude/skills/.dotagents-manifest" codex_manifest="$1/.codex/skills/.dotagents-manifest"
   local b="# dotagents:begin skills" e="# dotagents:end skills" tmp
@@ -329,8 +336,8 @@ ignore_kit_skills() {
   tmp="$(mktemp)"
   if [ -f "$gi" ]; then
     awk -v b="$b" -v e="$e" '$0==b{s=1} !s{print} $0==e{s=0}' "$gi" > "$tmp"
-    [ -s "$tmp" ] && [ -n "$(tail -c 1 "$tmp")" ] && printf '\n' >> "$tmp"
   fi
+  ensure_gitignore_block_spacing "$tmp"
   {
     printf '%s\n' "$b"
     printf '# Skill do ~/dotagents cài — mỗi máy tự chạy install.sh --project.\n'
@@ -361,8 +368,8 @@ ignore_conversations() {
   tmp="$(mktemp)"
   if [ -f "$gi" ]; then
     awk -v b="$b" -v e="$e" '$0==b{s=1} !s{print} $0==e{s=0}' "$gi" > "$tmp"
-    [ ! -s "$tmp" ] || [ -z "$(tail -c 1 "$tmp")" ] || printf '\n' >> "$tmp"
   fi
+  ensure_gitignore_block_spacing "$tmp"
   {
     printf '%s\n' "$b"
     printf '# Conversation được ignore mặc định; muốn commit file cụ thể thì dùng git add -f.\n'
