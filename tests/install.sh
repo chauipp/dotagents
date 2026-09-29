@@ -53,6 +53,8 @@ CLAUDE_CONFIG_DIR="$TMP_DIR/claude-config" CODEX_HOME="$TMP_DIR/codex-config" \
   "$KIT_DIR/install.sh" --project "$project" >/dev/null
 [ "$(grep -c '^# dotagents:begin skills$' "$project/.gitignore")" = 1 ] \
   || fail 'Project reinstall duplicated the managed .gitignore block'
+[ "$(grep -c '^# dotagents:begin conversations$' "$project/.gitignore")" = 1 ] \
+  || fail 'Project install did not create exactly one conversation ignore block'
 
 grep -q 'dotagents:begin' "$project/CLAUDE.md" || fail 'Project install did not write Claude rules'
 grep -q 'dotagents:begin' "$project/AGENTS.md" || fail 'Project install did not write Codex rules'
@@ -70,6 +72,7 @@ mkdir -p "$project/.claude/skills/project-only" "$project/.codex/skills/project-
 touch "$project/.claude/skills/project-only/SKILL.md" "$project/.codex/skills/project-only/SKILL.md"
 git -C "$project" check-ignore -q .claude/skills/graphify/SKILL.md || fail 'Claude kit skill is not ignored by Git'
 git -C "$project" check-ignore -q .codex/skills/graphify/SKILL.md || fail 'Codex kit skill is not ignored by Git'
+git -C "$project" check-ignore -q conversation/example.md || fail 'Conversation files are not ignored by Git'
 if git -C "$project" check-ignore -q .claude/skills/project-only/SKILL.md; then fail 'Project Claude skill was incorrectly ignored'; fi
 if git -C "$project" check-ignore -q .codex/skills/project-only/SKILL.md; then fail 'Project Codex skill was incorrectly ignored'; fi
 check_project="$TMP_DIR/check-project"

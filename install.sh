@@ -354,6 +354,25 @@ ignore_kit_skills() {
   echo "  ignore -> skill của kit thêm vào .gitignore"
 }
 
+# Conversation được bỏ qua mặc định ở mọi project đã cài rules. Giữ block riêng
+# để installer có thể cập nhật mà không đụng tới các rule khác của dự án.
+ignore_conversations() {
+  local target="$1" gi="$1/.gitignore" b="# dotagents:begin conversations" e="# dotagents:end conversations" tmp
+  tmp="$(mktemp)"
+  if [ -f "$gi" ]; then
+    awk -v b="$b" -v e="$e" '$0==b{s=1} !s{print} $0==e{s=0}' "$gi" > "$tmp"
+    [ ! -s "$tmp" ] || [ -z "$(tail -c 1 "$tmp")" ] || printf '\n' >> "$tmp"
+  fi
+  {
+    printf '%s\n' "$b"
+    printf '# Conversation được ignore mặc định; muốn commit file cụ thể thì dùng git add -f.\n'
+    printf '/conversation/\n'
+    printf '%s\n' "$e"
+  } >> "$tmp"
+  mv "$tmp" "$gi"
+  echo "  ignore -> conversation/"
+}
+
 # Giữ 3 bản gần nhất. Rules nằm trong marker nên các bản backup gần như trùng
 # nhau — cài lại vài chục lần là vài chục file rác, mà bản thứ tư trở đi chưa
 # bao giờ dùng tới. Xoá theo đúng tiền tố "<file>.bak." nên không đụng file khác.
@@ -489,6 +508,7 @@ if [ "$MODE" = project ]; then
     [ "$WANT_CLAUDE" = 1 ] && copy_skills "$TARGET/.claude/skills" claude
     [ "$WANT_CODEX" = 1 ] && copy_skills "$TARGET/.codex/skills" codex
     [ -e "$TARGET/.git" ] && ignore_kit_skills "$TARGET"
+    ignore_conversations "$TARGET"
     # Cấu hình machine-level của Claude chỉ liên quan khi cài Claude vào project.
     if [ "$WANT_CLAUDE" = 1 ]; then
       if [ -f "$CLAUDE_DIR/settings.json" ] && python3 -c "

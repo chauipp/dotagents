@@ -1,1 +1,6 @@
 .worktrees/
+
+# dotagents:begin conversations
+# Conversation được ignore mặc định; muốn commit file cụ thể thì dùng git add -f.
+/conversation/
+# dotagents:end conversations
