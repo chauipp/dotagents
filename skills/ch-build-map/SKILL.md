@@ -7,41 +7,87 @@ description: Use when building or editing an Unreal Engine room, sector, or leve
 
 ## Core contract
 
-The confirmed parent (minimum GPT-5.6 Sol) is the design authority, contract owner, and final visual gate. Workers receive bounded deliverables. Exactly one final-map builder writes the target `.umap`; no other agent edits it concurrently.
+The confirmed parent is the design authority, contract owner, and final visual gate. Use `gpt-5.6-luna` for light or moderate bounded work and `gpt-6.1-sol` for complex design, integration, map writing, or adjudication. Workers receive bounded deliverables. Exactly one final-map builder writes the target `.umap`; no other agent edits it concurrently.
+
+## Profile selection and syntax
+
+Invoke `$ch-build-map [low|med|high] <request>`. `medium` aliases `med`; omitting the level selects `med`. A level is recognized only as the first token after the skill name. Model IDs are not positional arguments.
+
+- `low`: light, bounded changes with straightforward geometry, layout, and checklist-based QA.
+- `med`: moderate work with complex asset preparation, layout, integration, or structural review; simple surveys and bounded technical modules use Luna.
+- `high`: complex work with coupled geometry, layout, technical systems, and structural decisions; decision-making workers use Sol 6.1.
+
+Use exactly one selected profile's table. Assign only roles actually needed. If a deliverable exceeds the selected profile's scope, report the mismatch and request a profile change before dispatching it; do not silently mix tables. Every profile retains all applicable acceptance gates.
 
 ### Parent model gate
 
-- Minimum: `gpt-5.6-sol` at `xhigh`.
-- Compare model tiers by credit cost for the same input/output token counts, not by the variable total tokens in one response. For the models in this skill, the order is `gpt-5.6-luna < gpt-5.6-terra < gpt-5.6-sol < gpt-6-astra`.
-- Verify the runtime parent before planning, reading project assets, or dispatching workers.
-- If the parent is below Sol, or its reasoning is below `xhigh`, return `BLOCKED_MODEL` and do not start any part of the workflow.
-- If the parent is above Sol, ask whether the user wants to use it. Continue only after confirmation; use the confirmed model at `xhigh` for all parent duties in this invocation.
-- If the user declines, stop and ask them to switch to Sol. Never change the runtime model yourself.
+- `low` requires `gpt-5.6-luna / medium`.
+- `med` and `high` require `gpt-6.1-sol / xhigh`.
+- Verify the exact runtime parent model and reasoning before planning, reading project assets, or dispatching workers. If the required pair cannot be verified or is unavailable, return `BLOCKED_MODEL` without starting the workflow.
+- Do not switch the runtime model yourself. Ask the user to switch to the required pair when it does not match.
 
-## Automatic quality-first routing
+## Role table — profile `low`
 
-`$ch-build-map` has no positional model arguments. On every invocation, assign only the roles actually needed using this table:
+| Role | Model | Reasoning |
+|---|---|---|
+| Parent / art director / integrator | `gpt-5.6-luna` | `medium` |
+| Geometry explorer | `gpt-5.6-luna` | `medium` |
+| Asset inventory and license scout | `gpt-5.6-luna` | `medium` |
+| Blender hero-asset worker | `gpt-6.1-sol` | `high` |
+| Layout worker | `gpt-5.6-luna` | `medium` |
+| Technical worker | `gpt-5.6-luna` | `medium` |
+| Final-map builder | `gpt-6.1-sol` | `high` |
+| Evidence worker | `gpt-5.6-luna` | `medium` |
+| Structural QA | `gpt-5.6-luna` | `medium` |
+| Final visual QA | `gpt-5.6-luna` | `medium` |
 
-| Role | Model | Reasoning | Ownership |
-|---|---|---|---|
-| Parent / art director / integrator | `gpt-5.6-sol` minimum; higher tier only after user confirmation | `xhigh` | Full brief, room contract, acceptance; not target-map writer while builder runs |
-| Geometry explorer | `gpt-5.6-terra` | `high` | Read-only map/geometry survey |
-| Asset inventory and license scout | `gpt-5.6-luna` | `medium` | Read-only inventory/report |
-| Blender hero-asset worker | `gpt-5.6-sol` | `high` | Isolated source/export/import-ready assets only |
-| Layout worker | `gpt-5.6-terra` | `high` | Transform proposal, footprint manifest, or sandbox level only |
-| Technical worker | `gpt-5.6-terra` | `high` | Isolated cable, bracket, service, collision, or material modules |
-| Final-map builder | `gpt-5.6-sol` | `high` | Sole writer of the named target `.umap` |
-| Evidence worker | `gpt-5.6-luna` | `medium` | Screenshots, hashes, counts, logs, and reports only |
-| Structural QA | `gpt-5.6-terra` | `high` | Read-only collision, overlap, clearance, support, reload, and PIE audit |
-| Final visual QA | Confirmed parent model | current `xhigh` | Opens the images directly and decides PASS/FAIL |
+## Role table — profile `med`
+
+| Role | Model | Reasoning |
+|---|---|---|
+| Parent / art director / integrator | `gpt-6.1-sol` | `xhigh` |
+| Geometry explorer | `gpt-5.6-luna` | `medium` |
+| Asset inventory and license scout | `gpt-5.6-luna` | `medium` |
+| Blender hero-asset worker | `gpt-6.1-sol` | `high` |
+| Layout worker | `gpt-6.1-sol` | `high` |
+| Technical worker | `gpt-5.6-luna` | `medium` |
+| Final-map builder | `gpt-6.1-sol` | `high` |
+| Evidence worker | `gpt-5.6-luna` | `medium` |
+| Structural QA | `gpt-6.1-sol` | `high` |
+| Final visual QA | `gpt-6.1-sol` | `xhigh` |
+
+## Role table — profile `high`
+
+| Role | Model | Reasoning |
+|---|---|---|
+| Parent / art director / integrator | `gpt-6.1-sol` | `xhigh` |
+| Geometry explorer | `gpt-6.1-sol` | `high` |
+| Asset inventory and license scout | `gpt-5.6-luna` | `medium` |
+| Blender hero-asset worker | `gpt-6.1-sol` | `high` |
+| Layout worker | `gpt-6.1-sol` | `high` |
+| Technical worker | `gpt-6.1-sol` | `high` |
+| Final-map builder | `gpt-6.1-sol` | `high` |
+| Evidence worker | `gpt-5.6-luna` | `medium` |
+| Structural QA | `gpt-6.1-sol` | `high` |
+| Final visual QA | `gpt-6.1-sol` | `xhigh` |
+
+## Shared role ownership
+
+- Parent owns the brief, room contract, integration decisions, and acceptance; it remains read-only against the target map while the builder runs.
+- Geometry explorer surveys the map read-only; inventory/license scout produces a read-only inventory and report.
+- Hero-asset worker creates isolated source/export/import-ready assets. This complex authoring role uses Sol 6.1 even in `low`.
+- Layout worker produces a transform proposal, footprint manifest, or sandbox level. Technical worker produces isolated cable, bracket, service, collision, or material modules.
+- Final-map builder is the sole writer of the named target `.umap`; this integration role uses Sol 6.1 in every profile.
+- Evidence worker captures screenshots, hashes, counts, logs, and reports only. Structural QA audits collision, overlap, clearance, support, reload, and PIE read-only.
+- Final visual QA opens the images directly and decides PASS/FAIL.
 
 Only the user may explicitly override one role. An override must name the role, exact model, and exact reasoning. Do not infer a global override from prose and do not restore the former “one model for every worker” behavior.
 
-If the runtime rejects any required model/reasoning pair, stop before dispatching that role and report the exact rejection. Do not lower reasoning, inherit another model, or substitute Luna/Terra/Sol automatically.
+If the runtime rejects any required model/reasoning pair, stop before dispatching that role and report the exact rejection. Do not lower reasoning or substitute another model automatically. This skill uses only `gpt-5.6-luna` and `gpt-6.1-sol`.
 
 ## Reasoning promotion ladder
 
-`high` is the default for work that must reason about geometry, assets, collision, integration, or QA. `medium` is reserved for bounded, repeatable read-only collection and evidence work. More actor count, more files, or a tighter deadline never alone justifies a higher setting.
+Use `medium` for light, repeatable, bounded work assigned to `gpt-5.6-luna`. Use `high` or `xhigh` for complex geometry, assets, collision, integration, or QA assigned to `gpt-6.1-sol`. More actor count, more files, or a tighter deadline never alone justifies higher reasoning.
 
 Promote one worker from `high` to `xhigh` only when the parent records at least one observable trigger:
 
@@ -50,9 +96,9 @@ Promote one worker from `high` to `xhigh` only when the parent records at least 
 - its same deliverable failed review after one targeted correction; or
 - the available evidence cannot distinguish a visual/design defect from a spatial/integration defect.
 
-Apply that promotion only to the bounded worker and deliverable that needs it. Typical candidates are the hero-asset worker, layout worker, technical worker, final builder, or structural reviewer. Do not promote Luna inventory/evidence work merely because it has many files.
+Apply that promotion only to the bounded `gpt-6.1-sol` worker and deliverable that needs it. Do not escalate Luna inventory/evidence work merely because it has many files.
 
-`max` is not a routine final gate and is never assigned to a worker. The confirmed parent may use it temporarily for one adjudication only when both conditions hold: (1) two `xhigh` attempts or reviews remain in material conflict or fail to resolve a non-reversible decision; and (2) the decision changes the room contract, protected architecture, or a costly-to-rework integration choice. Record the conflict, the options, and the decision. Otherwise remain at parent `xhigh`.
+`max` is not a routine final gate and is never assigned to a worker. The confirmed `gpt-6.1-sol` parent may use it temporarily for one adjudication only when both conditions hold: (1) two `xhigh` attempts or reviews remain in material conflict or fail to resolve a non-reversible decision; and (2) the decision changes the room contract, protected architecture, or a costly-to-rework integration choice. Record the conflict, the options, and the decision. Otherwise remain at parent `xhigh`.
 
 ## Required sequence
 
@@ -60,8 +106,8 @@ Apply that promotion only to the bounded worker and deliverable that needs it. T
 2. **Freeze the room contract.** The parent writes the manifest and acceptance rubric before any target-map mutation.
 3. **Prepare assets in isolation.** Inventory, hero assets, layout proposals, and technical modules may run in parallel only when their files and ownership do not overlap.
 4. **Approve assets before placement.** The confirmed parent inspects actual asset evidence. Rejected assets return to their owner; the map builder does not imitate missing assets with primitives.
-5. **Run one builder.** The named Sol builder writes only the target map and explicitly scoped integration files from the approved manifest.
-6. **Collect independent evidence.** Luna captures evidence; Terra performs structural QA; neither edits the target map.
+5. **Run one builder.** The named `gpt-6.1-sol` builder writes only the target map and explicitly scoped integration files from the approved manifest.
+6. **Collect independent evidence.** The evidence worker and structural reviewer use the selected profile's exact assignments. Neither edits the target map during QA.
 7. **Parent visual gate.** The confirmed parent opens every required eye-level and top-down image. A failed visual gate returns targeted corrections to the same builder or asset owner.
 8. **Reload and report.** Reopen the saved level, rerun affected checks, and distinguish completed work from unresolved or unverified work.
 
@@ -134,6 +180,7 @@ If the user asks to stop or commit while a gate fails, a checkpoint commit is al
 
 ```text
 Role: [exact role]
+Profile: [low / med / high]
 Model/reasoning: [exact pair from routing table]
 Single deliverable: [one bounded result]
 Context: [only the relevant excerpt and approved contract]
@@ -147,11 +194,11 @@ Return: [files, IDs, transforms, evidence, deviations, blockers]
 
 | Rationalization | Required response |
 |---|---|
-| “Luna is cheaper, so it can build the final map.” | Route the final builder to Sol/high. Cost never silently changes the quality-first matrix. |
-| “Sol/high is enough for the parent because the brief is already detailed.” | Keep the parent at least at Sol/xhigh, or use the higher-tier model the user confirmed; detailed briefs still need cross-role adjudication and visual judgment. |
-| “The parent model is higher-tier, so just switch without asking.” | Ask the user before using a higher-tier parent; after confirmation, use it only for parent duties and keep worker assignments unchanged. |
-| “The last review is important, so use max by default.” | Parent xhigh is the final gate. Max requires two unresolved xhigh attempts plus a non-reversible contract, architecture, or costly integration decision. |
-| “The deadline, actor count, or manager request justifies xhigh/max everywhere.” | Promote only the one bounded deliverable after an observable promotion trigger. Parallelism and scope control solve throughput; reasoning inflation does not. |
+| “Luna can build the final map because the task seems routine.” | Route the sole target-map writer to `gpt-6.1-sol/high`; Luna is for light/moderate bounded work. |
+| “A detailed brief makes the parent tier irrelevant.” | Use the selected profile's parent: Luna/medium for `low`, Sol 6.1/xhigh for `med` and `high`. |
+| “Switch the runtime to the model the task needs.” | Ask the user to switch; never change the runtime model yourself. |
+| “The last review is important, so use max by default.” | Use the selected profile's final visual QA effort. Max requires two unresolved xhigh attempts plus a non-reversible contract, architecture, or costly integration decision. |
+| “The deadline, actor count, or manager request justifies xhigh/max everywhere.” | Promote only the one bounded `gpt-6.1-sol` deliverable after an observable promotion trigger. Parallelism and scope control solve throughput; reasoning inflation does not. |
 | “These labeled cubes count as functional props.” | Reject them at the real-asset gate. Labels and counts are not models. |
 | “Static QA passed, so ugly screenshots are acceptable.” | Visual gate remains failed; return corrections. |
 | “The camera angle hides the floating piece.” | Inspect support from another eye-level angle and top-down; fix or remove it. |
