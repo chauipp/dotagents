@@ -544,6 +544,9 @@ sys.exit(0 if os.path.exists(p) and 'playwright' in json.load(open(p)).get('mcpS
 else
   prepare_rules_sources || exit 1
   if [ "$RULES_ONLY" = 0 ]; then
+    python3 "$KIT_DIR/scripts/dotagents_lifecycle.py" global-ignore --check
+  fi
+  if [ "$RULES_ONLY" = 0 ]; then
     targets=()
     [ "$WANT_CLAUDE" = 1 ] && targets+=("$CLAUDE_DIR/skills" claude)
     [ "$WANT_CODEX" = 1 ] && targets+=("$CODEX_DIR/skills" codex)
@@ -584,6 +587,12 @@ else
   fi
   [ "$WANT_CLAUDE" = 1 ] && record_install_state claude "$CLAUDE_DIR"
   [ "$WANT_CODEX" = 1 ] && record_install_state codex "$CODEX_DIR"
+  if [ "$RULES_ONLY" = 0 ]; then
+    ignore_roots=()
+    [ "$WANT_CLAUDE" = 1 ] && ignore_roots+=(--root "$CLAUDE_DIR")
+    [ "$WANT_CODEX" = 1 ] && ignore_roots+=(--root "$CODEX_DIR")
+    python3 "$KIT_DIR/scripts/dotagents_lifecycle.py" global-ignore "${ignore_roots[@]}"
+  fi
 fi
 
 echo

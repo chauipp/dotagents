@@ -5,6 +5,8 @@ set -euo pipefail
 KIT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TMP_DIR="$(mktemp -d)"
 trap 'rm -rf "$TMP_DIR"' EXIT
+export GIT_CONFIG_GLOBAL="$TMP_DIR/gitconfig"
+export XDG_CONFIG_HOME="$TMP_DIR/xdg"
 
 fail() {
   echo "FAIL: $*" >&2

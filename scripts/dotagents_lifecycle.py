@@ -10,6 +10,7 @@ from pathlib import Path
 import re
 import shutil
 import stat
+import subprocess
 import sys
 import tempfile
 import tomllib
@@ -20,6 +21,8 @@ BEGIN = "<!-- dotagents:begin"
 END = "<!-- dotagents:end -->"
 IGNORE_BEGIN = "# dotagents:begin skills"
 IGNORE_END = "# dotagents:end skills"
+CONVERSATION_BEGIN = "# dotagents:begin conversations"
+CONVERSATION_END = "# dotagents:end conversations"
 PLUGIN = "superpowers@claude-plugins-official"
 
 
@@ -77,6 +80,9 @@ def read_state(root):
             raise ValueError("Rules ownership trong ledger không hợp lệ")
         if not isinstance(record.get("config", {}), dict):
             raise ValueError("Config ledger không hợp lệ")
+        paths = record.get("global_ignores", [])
+        if not isinstance(paths, list) or any(not isinstance(p, str) or not Path(p).is_absolute() for p in paths):
+            raise ValueError("Global ignore ledger không hợp lệ")
         for key, entry in record.get("config", {}).items():
             if key not in config_specs(agent) or not isinstance(entry, dict):
                 raise ValueError("Config key trong ledger không hợp lệ")
@@ -227,6 +233,57 @@ def strip_block(data, begin, end):
     return b"".join(lines[:a] + lines[b + 1:]), (lines, a, b)
 
 
+def global_ignore_path():
+    result = subprocess.run(["git", "config", "--global", "--path", "--get", "core.excludesFile"],
+                            capture_output=True, text=True)
+    if result.returncode not in (0, 1):
+        raise ValueError(f"Không đọc được Git global config: {result.stderr.strip()}")
+    configured = result.returncode == 0
+    if configured:
+        value = result.stdout.rstrip("\n")
+        if not value:
+            raise ValueError("core.excludesFile rỗng; hãy cấu hình đường dẫn hợp lệ")
+        path = Path(value)
+    else:
+        path = Path(os.environ.get("XDG_CONFIG_HOME") or str(Path.home() / ".config")) / "git/ignore"
+    return safe_path(path), configured
+
+
+def install_global_ignore(args):
+    path, configured = global_ignore_path()
+    original = path.read_bytes() if path.exists() else b""
+    outside, _ = strip_block(original, CONVERSATION_BEGIN, CONVERSATION_END)
+    roots = [safe_path(root) for root in args.root]
+    states = [read_state(root) for root in roots]
+    print(f"  ignore global -> {path} (conversation/)")
+    if args.check:
+        return
+    separator = b"" if not outside or outside.endswith(b"\n\n") else (b"\n" if outside.endswith(b"\n") else b"\n\n")
+    block = (CONVERSATION_BEGIN + "\nconversation/\n" + CONVERSATION_END + "\n").encode()
+    output = outside + separator + block
+    if original != output:
+        atomic_bytes(path, output, stat.S_IMODE(path.stat().st_mode) if path.exists() else 0o600)
+    if not configured:
+        subprocess.run(["git", "config", "--global", "core.excludesFile", str(path)], check=True)
+    for root, state in zip(roots, states):
+        for record in state["agents"].values():
+            paths = record.setdefault("global_ignores", [])
+            if str(path) not in paths:
+                paths.append(str(path))
+        atomic_json(root / STATE, state)
+
+
+def plan_global_ignore(plan, paths):
+    for value in sorted(set(paths)):
+        path = safe_path(value)
+        if not path.exists():
+            continue
+        output, block = strip_block(path.read_bytes(), CONVERSATION_BEGIN, CONVERSATION_END)
+        if block:
+            plan.roots.add(path.parent)
+            plan.change(path, output)
+
+
 def fingerprint(path):
     path = safe_path(path, leaf_link=True)
     if path.is_symlink():
@@ -364,6 +421,8 @@ def plan_agent(plan, root, agent, project, rules_only, state):
         record.pop("rules_created", None)
     cleared = False
     if not rules_only:
+        if not project:
+            record.pop("global_ignores", None)
         skills = safe_path(root / (("." + agent + "/skills") if project else "skills"))
         manifest = safe_path(skills / ".dotagents-manifest")
         if manifest.exists():
@@ -410,7 +469,7 @@ def plan_agent(plan, root, agent, project, rules_only, state):
             if not record.get("config"):
                 plan.note(f"GIỮ config {root}: không có key thuộc ledger dotagents")
             record["config"] = pending
-    if record.get("rules_created") or record.get("config"):
+    if record.get("rules_created") or record.get("config") or record.get("global_ignores"):
         state["agents"][agent] = record
     else:
         state["agents"].pop(agent, None)
@@ -554,16 +613,21 @@ def uninstall(args):
     plan = RemovalPlan()
     states = {}
     cleared = []
+    global_ignores = []
     for agent in agents:
         root = roots[agent]
         if root not in states:
             states[root] = read_state(root)
+        if not project and not args.rules_only:
+            global_ignores.extend(states[root]["agents"].get(agent, {}).get("global_ignores", []))
         if plan_agent(plan, root, agent, project, args.rules_only, states[root]):
             cleared.append(agent)
     for root, state in states.items():
         finish_state(plan, root, state)
     if project and not args.rules_only:
         plan_ignore(plan, roots[agents[0]], cleared)
+    elif not project and not args.rules_only:
+        plan_global_ignore(plan, global_ignores)
     if args.check:
         plan.report()
         print("CHECK: không ghi file hoặc tạo backup.")
@@ -589,15 +653,20 @@ def main():
     p.add_argument("--check", action="store_true")
     p.add_argument("--restore", type=Path)
     p.add_argument("--backup-dir", default=str(Path.home() / ".local/state/dotagents/uninstall"))
+    p = subs.add_parser("global-ignore")
+    p.add_argument("--root", type=Path, action="append", default=[])
+    p.add_argument("--check", action="store_true")
     args = parser.parse_args()
     try:
         if args.command == "snapshot":
             snapshot_install(args)
         elif args.command == "record":
             record_install(args)
+        elif args.command == "global-ignore":
+            install_global_ignore(args)
         else:
             uninstall(args)
-    except (OSError, ValueError, KeyError, TypeError) as error:
+    except (OSError, ValueError, KeyError, TypeError, subprocess.CalledProcessError) as error:
         print(f"LỖI: {error}", file=sys.stderr)
         return 1
     return 0

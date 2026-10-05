@@ -23,7 +23,9 @@ class UninstallTests(unittest.TestCase):
         self.project.mkdir()
         subprocess.run(["git", "init", "-q", str(self.project)], check=True)
         self.env = dict(os.environ, CODEX_HOME=str(self.base / "codex"),
-                        CLAUDE_CONFIG_DIR=str(self.base / "claude"))
+                        CLAUDE_CONFIG_DIR=str(self.base / "claude"),
+                        GIT_CONFIG_GLOBAL=str(self.base / "gitconfig"),
+                        XDG_CONFIG_HOME=str(self.base / "xdg"))
         self.backups = self.base / "backups"
 
     def run_script(self, script, *args, ok=True):
@@ -78,6 +80,74 @@ class UninstallTests(unittest.TestCase):
         self.uninstall("--restore", self.backup())
         self.assertEqual(managed.read_text(), "locally edited kit")
         self.assertIn("dotagents:begin", (self.project / "AGENTS.md").read_text())
+
+    def test_global_ignore_install_check_uninstall_restore(self):
+        ignore = self.base / "xdg/git/ignore"
+        ignore.parent.mkdir(parents=True)
+        ignore.write_bytes(b"private-pattern\n")
+        self.install("--codex", "--check")
+        self.assertEqual(ignore.read_bytes(), b"private-pattern\n")
+        self.install("--codex", "--rules-only")
+        self.assertEqual(ignore.read_bytes(), b"private-pattern\n")
+        self.assertFalse((self.base / "gitconfig").exists())
+        self.install("--codex")
+        installed = ignore.read_bytes()
+        self.install("--codex")
+        self.assertEqual(installed, ignore.read_bytes())
+        self.assertEqual(installed.count(b"# dotagents:begin conversations"), 1)
+        for repo in (self.project, self.base / "another-project"):
+            repo.mkdir(exist_ok=True)
+            subprocess.run(["git", "init", "-q", str(repo)], env=self.env, check=True)
+            subprocess.run(["git", "-C", str(repo), "check-ignore", "-q",
+                            "conversation/example.md"], env=self.env, check=True)
+        before = self.snapshot()
+        self.uninstall("--codex", "--check")
+        self.assertEqual(before, self.snapshot())
+        self.uninstall("--codex", "--rules-only")
+        self.assertEqual(installed, ignore.read_bytes())
+        self.install("--codex")
+        self.uninstall("--codex")
+        self.assertNotIn(b"dotagents:begin conversations", ignore.read_bytes())
+        self.assertTrue(ignore.read_bytes().startswith(b"private-pattern\n"))
+        backup = sorted(self.backups.iterdir())[-1]
+        self.uninstall("--restore", backup)
+        self.assertEqual(installed, ignore.read_bytes())
+
+    def test_custom_global_ignore_and_changed_git_config(self):
+        ignore = self.base / "custom ignore"
+        ignore.write_bytes(b"# private\nprivate-file")
+        subprocess.run(["git", "config", "--global", "core.excludesFile", str(ignore)],
+                       env=self.env, check=True)
+        self.install("--all")
+        self.assertIn(b"conversation/", ignore.read_bytes())
+        alternate = self.base / "alternate-ignore"
+        alternate.write_text("another-rule\n")
+        subprocess.run(["git", "config", "--global", "core.excludesFile", str(alternate)],
+                       env=self.env, check=True)
+        self.uninstall("--all")
+        self.assertNotIn(b"dotagents:begin conversations", ignore.read_bytes())
+        self.assertTrue(ignore.read_bytes().startswith(b"# private\nprivate-file"))
+        self.assertEqual(alternate.read_text(), "another-rule\n")
+
+    def test_global_ignore_malformed_marker_preflight(self):
+        ignore = self.base / "xdg/git/ignore"
+        ignore.parent.mkdir(parents=True)
+        ignore.write_text("# dotagents:begin conversations\nconversation/\n")
+        before = self.snapshot()
+        self.run_script("install.sh", "--codex", ok=False)
+        self.assertEqual(before, self.snapshot())
+
+    def test_global_ignore_removes_all_recorded_paths(self):
+        self.install("--all")
+        first = self.base / "xdg/git/ignore"
+        second = self.base / "second-ignore"
+        subprocess.run(["git", "config", "--global", "core.excludesFile", str(second)],
+                       env=self.env, check=True)
+        self.install("--codex")
+        self.uninstall("--codex")
+        self.assertNotIn(b"dotagents:begin conversations", first.read_bytes())
+        self.assertNotIn(b"dotagents:begin conversations", second.read_bytes())
+        self.assertTrue((Path(self.env["CLAUDE_CONFIG_DIR"]) / "CLAUDE.md").exists())
 
     def test_rules_only_then_full_and_repeat(self):
         self.install("--project", self.project)

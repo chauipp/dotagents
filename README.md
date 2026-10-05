@@ -95,6 +95,8 @@ cd ~/dotagents
 
 Không tham số thì script tự dò: thấy `~/.claude` thì cài cho Claude Code, thấy `~/.codex` thì cài cho Codex, có cả hai thì cài cả hai. Làm một lần mỗi máy, sau đó mọi dự án trên máy đều có.
 
+Cài global đầy đủ cũng thêm block `dotagents:begin conversations` chứa `conversation/` vào file ignore global của Git (`core.excludesFile`). Nếu đã cấu hình file riêng thì dùng file đó; nếu chưa có thì dùng `$XDG_CONFIG_HOME/git/ignore`, mặc định `~/.config/git/ignore`, và cấu hình Git trỏ tới file này. Giữ nguyên rule ngoài block; cài lại không nhân đôi block. Nhờ vậy không cần cài theo project để ignore conversation. `--check` chỉ báo đường dẫn, `--rules-only` không sửa ignore hoặc cấu hình Git. Ignore chỉ ngăn Git thêm file mới: conversation vẫn được lưu trên đĩa và file đã tracked vẫn được theo dõi. Có thể commit file riêng bằng `git add -f <file>`; cấu hình ignore riêng ở repository có thể ghi đè global.
+
 Chỉ định rõ nếu muốn:
 
 ```bash
@@ -189,7 +191,9 @@ Cần Python 3.11+ cho ledger và uninstaller. Chạy xem trước rồi gỡ đ
 
 Project mặc định chọn cả hai agent; global không có selector thì chọn các thư mục config đang tồn tại. Có thể dùng `--claude`, `--codex`, `--all`, `--rules-only`. Global tôn trọng `CODEX_HOME` và `CLAUDE_CONFIG_DIR` như installer. Gỡ project không thay đổi global.
 
-Uninstaller bỏ block rules dotagents và skill có tên trong manifest, giữ rules bên ngoài, skill riêng và `.system/`. Gỡ một agent chỉ bỏ entry ignore của agent đó. Marker/manifest/path/ledger không hợp lệ khiến lệnh dừng trước khi gỡ. Thiếu manifest thì giữ skill chưa xác định ownership; script không đoán theo tên trong kit. Script không thay đổi Git index hoặc commit; ignore không tự bỏ theo dõi file đã tracked.
+Uninstall global đầy đủ gỡ block conversation trong các file ignore đã ghi vào ledger, kể cả khi `core.excludesFile` đã đổi sau cài. Block này dùng chung cho mọi repository và agent: gỡ global với `--codex` hoặc `--claude` cũng gỡ block dùng chung; muốn bật lại thì chạy installer global đầy đủ. Uninstaller giữ file ignore, rule ngoài block và cấu hình `core.excludesFile`. `--rules-only` giữ block; `--check` không ghi. File ignore được backup và có thể restore như các file khác.
+
+Uninstaller bỏ block rules dotagents và skill có tên trong manifest, giữ rules bên ngoài, skill riêng và `.system/`. Ở project, gỡ một agent chỉ bỏ entry ignore skill của agent đó. Marker/manifest/path/ledger không hợp lệ khiến lệnh dừng trước khi gỡ. Thiếu manifest thì giữ skill chưa xác định ownership; script không đoán theo tên trong kit. Script không thay đổi Git index hoặc commit; ignore không tự bỏ theo dõi file đã tracked.
 
 Installer mới ghi `.dotagents-state.json`: nguồn gốc file rules và giá trị trước/sau của các key config thực sự thay đổi. Uninstaller chỉ khôi phục key còn khớp giá trị installer đã ghi. Key người dùng đã sửa sau cài được giữ và báo `GIỮ`; ledger của key đó còn lại để không mất nguồn gốc. Bản cài cũ thiếu ledger vẫn gỡ được block rules/skill có manifest, nhưng giữ config chưa chứng minh ownership. Chạy lại installer trên bản cài cũ không thể suy ra giá trị trước lần cài đầu tiên.
 
