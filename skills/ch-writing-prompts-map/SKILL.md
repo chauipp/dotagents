@@ -64,13 +64,13 @@ Sau khi parent gate pass, chọn bảng role tương ứng với profile Sol cho
 | Role | Model | Reasoning |
 |---|---|---|
 | P | `gpt-5.6-sol` | `xhigh` |
-| S1 | `gpt-5.6-terra` | `medium` |
-| S2 | `gpt-5.6-terra` | `high` |
-| S3 | `gpt-5.6-sol` | `xhigh` |
-| S4 | `gpt-5.6-sol` | `high` |
-| S5 | `gpt-5.6-sol` | `high` |
-| S6 | `gpt-5.6-terra` | `high` |
-| S7 | `gpt-5.6-sol` | `xhigh` |
+| S1 | `gpt-5.6-luna` | `medium` |
+| S2 | `gpt-6.1-sol` | `high` |
+| S3 | `gpt-6.1-sol` | `xhigh` |
+| S4 | `gpt-5.6-luna` | `medium` |
+| S5 | `gpt-6.1-sol` | `high` |
+| S6 | `gpt-6.1-sol` | `high` |
+| S7 | `gpt-6.1-sol` | `xhigh` |
 | W | `gpt-5.6-luna` | `medium` |
 
 ### Bảng role cho level `high`
