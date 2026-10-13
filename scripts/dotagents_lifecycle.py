@@ -15,6 +15,8 @@ import sys
 import tempfile
 import tomllib
 
+sys.dont_write_bytecode = True
+
 STATE = ".dotagents-state.json"
 RULES = {"claude": "CLAUDE.md", "codex": "AGENTS.md"}
 BEGIN = "<!-- dotagents:begin"
@@ -119,6 +121,65 @@ def config_data(path):
     return data
 
 
+def is_features_table(name):
+    try:
+        return tomllib.loads("[" + name + "]\n") == {"features": {}}
+    except ValueError:
+        return False
+
+
+def codex_config_output(root):
+    """Plan a minimal text edit, and parse the complete result before writing."""
+    path = safe_path(root / "config.toml")
+    original = path.read_bytes() if path.exists() else b""
+    data = tomllib.loads(original.decode("utf-8"))
+    expected = copy.deepcopy(data)
+    for key in ("features", "mcp_servers"):
+        if key in data and not isinstance(data[key], dict):
+            raise ValueError(f"Config {key} không phải table: {path}")
+    output = original.decode("utf-8")
+    if "multi_agent" not in data.get("features", {}):
+        expected.setdefault("features", {})["multi_agent"] = True
+        if "features" not in data:
+            output += "\n[features]\nmulti_agent = true\n"
+        else:
+            lines = output.splitlines(keepends=True)
+            found = []
+            for index, line in enumerate(lines):
+                table = re.fullmatch(r"\s*\[([^\]]+)\]\s*(?:#.*)?", line.rstrip("\r\n"))
+                if table and is_features_table(table.group(1)):
+                    found.append(index)
+            if len(found) != 1:
+                raise ValueError(f"Không hỗ trợ thêm multi_agent vào inline/dotted features; giữ nguyên: {path}")
+            index = found[0]
+            if not lines[index].endswith("\n"):
+                lines[index] += "\n"
+            lines.insert(index + 1, "multi_agent = true\n")
+            output = "".join(lines)
+    if "playwright" not in data.get("mcp_servers", {}):
+        expected.setdefault("mcp_servers", {})["playwright"] = {
+            "command": "npx", "args": ["@playwright/mcp@latest"]}
+        output += '\n[mcp_servers.playwright]\ncommand = "npx"\nargs = ["@playwright/mcp@latest"]\n'
+    try:
+        parsed = tomllib.loads(output)
+    except ValueError as error:
+        raise ValueError(f"Không hỗ trợ thêm config vào cấu trúc TOML hiện tại; giữ nguyên: {path}") from error
+    if parsed != expected:
+        raise ValueError(f"Config dự kiến thay đổi dữ liệu ngoài các key cần thêm: {path}")
+    return original, output.encode("utf-8")
+
+
+def tune_codex_config(root):
+    root = safe_path(root)
+    original, output = codex_config_output(root)
+    path = root / "config.toml"
+    if output != original:
+        atomic_bytes(path, output, stat.S_IMODE(path.stat().st_mode) if path.exists() else 0o600)
+        print(f"  config -> {path}: thêm các key Codex còn thiếu")
+    else:
+        print(f"  config -> {path} đã đủ")
+
+
 def at_key(data, keys):
     obj = data
     for key in keys:
@@ -169,7 +230,7 @@ def toml_owned_text(path, key):
         if table:
             name = table.group(1).strip()
             if key == "multi_agent":
-                active = name == "features"
+                active = is_features_table(name)
             elif active:
                 break
             elif name == "mcp_servers.playwright":
@@ -334,7 +395,7 @@ def render_toml(original, key, before):
         for i, line in enumerate(lines):
             table = re.match(r"^\s*\[([^\]]+)\]\s*(?:#.*)?$", line.rstrip("\r\n"))
             if table:
-                active = table.group(1).strip() == "features"
+                active = is_features_table(table.group(1).strip())
             if active and re.match(r"^\s*multi_agent\s*=", line):
                 found.append(i)
         if len(found) != 1:
@@ -421,6 +482,9 @@ def plan_agent(plan, root, agent, project, rules_only, state):
         record.pop("rules_created", None)
     cleared = False
     if not rules_only:
+        if agent == "codex":
+            from english_hook_install import plan_uninstall
+            plan_uninstall(plan, root / ".codex" if project else root)
         if not project:
             record.pop("global_ignores", None)
         skills = safe_path(root / (("." + agent + "/skills") if project else "skills"))
@@ -487,6 +551,8 @@ def plan_ignore(plan, root, agents):
     lines, a, b = block
     prefixes = tuple(("." + agent + "/skills/").encode() for agent in agents)
     kept = [line for line in lines[a + 1:b] if not line.rstrip(b"\r\n").startswith(prefixes)]
+    if "codex" in agents and plan.changes.get(root / ".codex/.dotagents-english-hook.json", b"keep") is None:
+        kept = [line for line in kept if line.rstrip(b"\r\n") != b".codex/.dotagents-english-hook.json"]
     if plan.changes.get(root / STATE, b"keep") is None or not (root / STATE).exists():
         kept = [line for line in kept if line.rstrip(b"\r\n") != STATE.encode()]
     meaningful = [line for line in kept if line.strip() and not line.lstrip().startswith(b"#")]
@@ -656,6 +722,8 @@ def main():
     p = subs.add_parser("global-ignore")
     p.add_argument("--root", type=Path, action="append", default=[])
     p.add_argument("--check", action="store_true")
+    p = subs.add_parser("codex-config")
+    p.add_argument("root", type=Path)
     args = parser.parse_args()
     try:
         if args.command == "snapshot":
@@ -664,6 +732,8 @@ def main():
             record_install(args)
         elif args.command == "global-ignore":
             install_global_ignore(args)
+        elif args.command == "codex-config":
+            tune_codex_config(args.root)
         else:
             uninstall(args)
     except (OSError, ValueError, KeyError, TypeError, subprocess.CalledProcessError) as error:

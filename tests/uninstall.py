@@ -57,6 +57,115 @@ class UninstallTests(unittest.TestCase):
     def backup(self):
         return next(self.backups.iterdir())
 
+    def test_english_hook_global_project_backup_restore(self):
+        for project in (False, True):
+            with self.subTest(project=project):
+                args = ("--project", self.project, "--codex") if project else ("--codex",)
+                root = self.project / ".codex" if project else Path(self.env["CODEX_HOME"])
+                root.mkdir(exist_ok=True)
+                path = root / "hooks.json"
+                personal = {"hooks": {"UserPromptSubmit": [{"hooks": [
+                    {"type": "command", "command": "echo personal"}]}]}}
+                path.write_text(json.dumps(personal))
+                knowledge = self.base / "personal-knowledge/learned.json"
+                knowledge.parent.mkdir(exist_ok=True)
+                knowledge.write_text('{"words": ["persist"]}')
+                self.env["DOTAGENTS_ENGLISH_STATE_DIR"] = str(knowledge.parent)
+                self.install(*args)
+                installed = path.read_bytes()
+                ledger = root / ".dotagents-english-hook.json"
+                owned = ledger.read_bytes()
+                before = self.snapshot()
+                self.uninstall(*args, "--check")
+                self.assertEqual(before, self.snapshot())
+                self.uninstall(*args, "--rules-only")
+                self.assertEqual(installed, path.read_bytes())
+                self.assertEqual(owned, ledger.read_bytes())
+                removed = self.uninstall(*args)
+                self.assertEqual(json.loads(path.read_text()), personal)
+                self.assertFalse(ledger.exists())
+                self.assertEqual(knowledge.read_text(), '{"words": ["persist"]}')
+                backup = Path(next(line.removeprefix("Backup: ") for line in removed.stdout.splitlines()
+                                   if line.startswith("Backup: ")))
+                journal = json.loads((backup / "journal.json").read_text())
+                self.assertIn(str(ledger), [entry["path"] for entry in journal["entries"]])
+                self.uninstall("--restore", backup)
+                self.assertEqual(path.read_bytes(), installed)
+                self.assertEqual(ledger.read_bytes(), owned)
+
+    def test_english_hook_later_personal_edit_kept(self):
+        self.install("--codex")
+        root = Path(self.env["CODEX_HOME"])
+        path = root / "hooks.json"
+        data = json.loads(path.read_text())
+        personal = {"hooks": [{"type": "command", "command": "echo newly added"}]}
+        data["hooks"]["UserPromptSubmit"].append(personal)
+        path.write_text(json.dumps(data))
+        self.uninstall("--codex")
+        self.assertEqual(json.loads(path.read_text()), {"hooks": {"UserPromptSubmit": [personal]}})
+
+    def test_quoted_features_install_uninstall_keeps_personal_config(self):
+        root = Path(self.env["CODEX_HOME"])
+        root.mkdir()
+        path = root / "config.toml"
+        original = '["features"] # personal heading\npersonal = true # personal value\n'
+        path.write_text(original)
+        self.install("--codex")
+        self.assertIn("multi_agent = true", path.read_text())
+        self.uninstall("--codex")
+        self.assertNotIn("multi_agent", path.read_text())
+        self.assertTrue(path.read_text().startswith(original))
+
+    def test_english_hook_owned_edit_kept_and_reinstall_refused(self):
+        self.install("--project", self.project, "--codex")
+        root = self.project / ".codex"
+        path = root / "hooks.json"
+        data = json.loads(path.read_text())
+        data["hooks"]["UserPromptSubmit"][0]["hooks"].append({"type": "command", "command": "echo personal"})
+        path.write_text(json.dumps(data))
+        owned = path.read_bytes()
+        before = self.snapshot()
+        self.run_script("install.sh", "--project", self.project, "--codex", ok=False)
+        self.assertEqual(before, self.snapshot())
+        self.uninstall("--project", self.project, "--codex")
+        self.assertEqual(path.read_bytes(), owned)
+        self.assertTrue((root / ".dotagents-english-hook.json").exists())
+
+    def test_english_hook_malformed_preflight_before_other_agent_mutation(self):
+        for project in (False, True):
+            with self.subTest(project=project):
+                root = self.project / ".codex" if project else Path(self.env["CODEX_HOME"])
+                root.mkdir(exist_ok=True)
+                (root / "hooks.json").write_text('{broken')
+                args = ("--project", self.project, "--all") if project else ("--all",)
+                for flags in ((), ("--check",)):
+                    before = self.snapshot()
+                    self.run_script("install.sh", *args, *flags, ok=False)
+                    self.assertEqual(before, self.snapshot())
+                self.install(*args, "--rules-only")
+                self.assertEqual((root / "hooks.json").read_text(), '{broken')
+                self.assertFalse((root / ".dotagents-english-hook.json").exists())
+
+    def test_english_hook_collision_and_toml_preflight(self):
+        for project in (False, True):
+            with self.subTest(project=project):
+                root = self.project / ".codex" if project else Path(self.env["CODEX_HOME"])
+                root.mkdir(exist_ok=True)
+                args = ("--project", self.project, "--all") if project else ("--all",)
+                config = root / "config.toml"
+                config.write_text('invalid TOML')
+                for flags in ((), ("--check",)):
+                    before = self.snapshot()
+                    self.run_script("install.sh", *args, *flags, ok=False)
+                    self.assertEqual(before, self.snapshot())
+                config.write_text('model = "personal"\n')
+                script = root / "skills/ch-learn-english/scripts/english_state.py"
+                group = {"hooks": [{"type": "command", "command": 'python3 "' + str(script) + '" hook', "timeout": 10}]}
+                (root / "hooks.json").write_text(json.dumps({"hooks": {"UserPromptSubmit": [group]}}))
+                before = self.snapshot()
+                self.run_script("install.sh", *args, ok=False)
+                self.assertEqual(before, self.snapshot())
+
     def test_project_preservation_check_restore(self):
         for name in ["AGENTS.md", "CLAUDE.md"]:
             (self.project / name).write_text("private rules\n")

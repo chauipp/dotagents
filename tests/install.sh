@@ -82,7 +82,7 @@ if git -C "$project" check-ignore -q .codex/skills/project-only/SKILL.md; then f
 check_project="$TMP_DIR/check-project"
 mkdir -p "$check_project/.codex"
 printf "existing ignore\n" > "$check_project/.gitignore"
-printf "existing config\n" > "$check_project/.codex/config.toml"
+printf 'model = "existing"\n' > "$check_project/.codex/config.toml"
 check_gitignore_hash=$(sha256sum "$check_project/.gitignore")
 check_config_hash=$(sha256sum "$check_project/.codex/config.toml")
 "$KIT_DIR/install.sh" --check --project "$check_project" > "$TMP_DIR/check-output"
@@ -119,11 +119,77 @@ CODEX_HOME="$TMP_DIR/codex-config" "$KIT_DIR/install.sh" --codex >/dev/null
 grep -q '^multi_agent = true$' "$TMP_DIR/codex-config/config.toml" \
   || fail 'Codex install did not enable multi_agent inside an existing features table'
 
+# Parsed TOML decides ownership even for inline/quoted tables; reject unsupported
+# edits before either agent's rules, skills, hooks, ignore, or ledger are changed.
+python3 - "$KIT_DIR" "$TMP_DIR" <<'PY'
+import json, os, subprocess, sys, tomllib
+from pathlib import Path
+kit, base = map(Path, sys.argv[1:])
+cases = [
+    ('inline-present', '# keep comment\nfeatures = { multi_agent = true, personal = false }\n', True),
+    ('inline-absent', '# keep comment\nfeatures = { personal = true }\n', False),
+    ('quoted-present', '["features"] # keep heading\nmulti_agent = false # keep value\npersonal = true\n', True),
+    ('quoted-absent', '["features"] # keep heading\npersonal = true # keep value\n', True),
+    ('literal-quoted-absent', "['features'] # keep heading\npersonal = true\n", True),
+    ('inline-mcp-present', 'features = { multi_agent = true }\nmcp_servers = { playwright = { command = "personal" } }\n', True),
+    ('quoted-mcp-present', '["features"]\nmulti_agent = true\n["mcp_servers"."playwright"] # keep heading\ncommand = "personal"\n', True),
+    ('inline-mcp-absent', 'features = { multi_agent = true }\nmcp_servers = { personal = { command = "personal" } }\n', False),
+]
+for name, original, supported in cases:
+    target = base / ('toml-' + name)
+    codex, claude = target / 'codex', target / 'claude'
+    codex.mkdir(parents=True)
+    config = codex / 'config.toml'
+    config.write_text(original)
+    env = dict(os.environ, CODEX_HOME=str(codex), CLAUDE_CONFIG_DIR=str(claude))
+    def snapshot():
+        return {str(p.relative_to(target)): p.read_bytes() if p.is_file() else None
+                for p in target.rglob('*')}
+    before = snapshot()
+    check = subprocess.run([str(kit / 'install.sh'), '--all', '--check'], env=env, capture_output=True, text=True)
+    assert snapshot() == before, (name, 'check mutated target')
+    assert (check.returncode == 0) == supported, (name, check.stdout, check.stderr)
+    installed = subprocess.run([str(kit / 'install.sh'), '--all'], env=env, capture_output=True, text=True)
+    assert (installed.returncode == 0) == supported, (name, installed.stdout, installed.stderr)
+    if not supported:
+        assert snapshot() == before, (name, 'partial mutation')
+        continue
+    parsed = tomllib.loads(config.read_text())
+    existing = tomllib.loads(original)
+    expected = json.loads(json.dumps(existing))
+    expected.setdefault('features', {}).setdefault('multi_agent', True)
+    expected.setdefault('mcp_servers', {}).setdefault('playwright', {'command': 'npx', 'args': ['@playwright/mcp@latest']})
+    assert parsed == expected, (name, parsed, expected)
+    assert all(line in config.read_text().splitlines() for line in original.splitlines()), (name, 'lost original lines/comments')
+    current = config.read_bytes()
+    installed = subprocess.run([str(kit / 'install.sh'), '--codex'], env=env, capture_output=True, text=True)
+    assert installed.returncode == 0, (name, installed.stdout, installed.stderr)
+    assert config.read_bytes() == current, (name, 'reinstall changed config')
+PY
+
 rules_only_global="$TMP_DIR/rules-only-global"
 CODEX_HOME="$rules_only_global" "$KIT_DIR/install.sh" --codex --rules-only >/dev/null
 [ -f "$rules_only_global/AGENTS.md" ] || fail 'Global --rules-only did not write Codex rules'
 [ ! -e "$rules_only_global/skills" ] || fail 'Global --rules-only copied skills'
 [ ! -e "$rules_only_global/config.toml" ] || fail 'Global --rules-only changed Codex config'
+[ ! -e "$rules_only_global/hooks.json" ] || fail 'Global --rules-only wrote hooks'
+[ ! -e "$rules_only_global/.dotagents-english-hook.json" ] || fail 'Global --rules-only wrote hook ownership'
+
+# Standalone English hook targets the copied Codex-only helper, safely quoting spaces.
+python3 - "$project/.codex" "$TMP_DIR/codex-config" <<'PY'
+import json, shlex, sys
+from pathlib import Path
+for value in sys.argv[1:]:
+    root = Path(value)
+    group, = json.loads((root / 'hooks.json').read_text())['hooks']['UserPromptSubmit']
+    assert shlex.split(group['hooks'][0]['command']) == [
+        'python3', str(root / 'skills/ch-learn-english/scripts/english_state.py'), 'hook']
+    assert (root / 'skills/ch-learn-english/scripts/english_state.py').is_file()
+    assert json.loads((root / '.dotagents-english-hook.json').read_text())['group'] == group
+PY
+[ ! -e "$project/.claude/skills/ch-learn-english" ] || fail 'English skill leaked into Claude'
+[ ! -e "$check_project/.codex/hooks.json" ] || fail '--check wrote hooks'
+git -C "$project" check-ignore -q .codex/.dotagents-english-hook.json || fail 'Hook ownership ledger is not ignored'
 
 global_claude="$TMP_DIR/global-claude"
 mkdir -p "$global_claude/skills/brainstorming"

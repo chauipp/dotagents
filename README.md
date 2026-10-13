@@ -71,7 +71,7 @@ done
 Chỉ liệt kê thư mục có `.dotagents-manifest`, tức thư mục thật sự do dotagents cài — thư mục
 config của account khác trên cùng máy không lọt vào.
 
-Claude cài **28 skill**, còn Codex cài **30 skill**. Mỗi thư mục cài đặt phải có đúng 1 khối rules. Ra 2 khối là file đang chứa rules hai lần —
+Claude cài **28 skill**, còn Codex cài **31 skill**. Mỗi thư mục cài đặt phải có đúng 1 khối rules. Ra 2 khối là file đang chứa rules hai lần —
 xem mục [Lần đầu chạy trên máy đã có sẵn rules](#lần-đầu-chạy-trên-máy-đã-có-sẵn-rules).
 Không ra dòng nào là bước 1 chưa chạy được.
 
@@ -113,6 +113,16 @@ Dùng config dir khác mặc định:
 CLAUDE_CONFIG_DIR=~/.claude-acc2 ./install.sh --claude
 CODEX_HOME=~/.codex-work         ./install.sh --codex
 ```
+
+### Học tiếng Anh trong Codex
+
+`ch-learn-english` chỉ dành cho Codex và mặc định tắt ở mỗi chat mới. Cài đầy đủ global hoặc project đăng ký một group `UserPromptSubmit` trong `hooks.json` cạnh config Codex, chạy helper ở bản skill đã copy bằng `python3 <đường-dẫn-đã-quote> hook`. `--check` kiểm tra config/collision trước khi ghi; `--rules-only` không cài hoặc sửa hooks. Installer giữ các group hook riêng và quản lý group English bằng ledger `.dotagents-english-hook.json`; group bị sửa hoặc trùng sẽ khiến cài lại dừng trước mutation để tránh ghi đè.
+
+Sau khi cài, khởi động lại Codex rồi review/trust hook trong Codex; installer không tự thay trust. Hook project còn cần project được trust. Nếu đã có inline `[hooks]` trong `config.toml`, Codex nạp cả inline và `hooks.json`; giữ nguyên các hook riêng. Xem [tài liệu hooks](https://learn.chatgpt.com/docs/hooks).
+
+Gọi `$ch-learn-english on`, `$ch-learn-english off` hoặc `$ch-learn-english status`. Chế độ chỉ áp dụng cho chat hiện tại; khi bật, agent sửa ngữ pháp yêu cầu tiếng Anh, trả lời tiếng Anh và chú thích từ/cụm chưa biết bằng tiếng Việt. Khi tắt, trở về mặc định tiếng Việt. Từ/cụm/cấu trúc đã học dùng chung trên máy trong `$XDG_STATE_HOME/dotagents/ch-learn-english` (mặc định `~/.local/state/dotagents/ch-learn-english`), có thể chọn vị trí bằng `DOTAGENTS_ENGLISH_STATE_DIR`.
+
+Uninstall đầy đủ chỉ gỡ group khớp chính xác ledger, giữ các group riêng kể cả được sửa sau khi cài, và không xóa knowledge/sessions ngoài repo. Nếu group English bị sửa hoặc trùng thì giữ group và ledger để người dùng xử lý; helper trong skill vẫn bị gỡ theo manifest nên cần kiểm tra lại command còn giữ. `--rules-only` giữ hook và ledger. Backup/restore bao gồm cả file hook thay đổi và ledger.
 
 ### Cài riêng cho một dự án
 
@@ -211,13 +221,14 @@ Nội dung ngoài marker được giữ nguyên, kể cả dòng trắng install
 ## Cấu trúc
 
 ```
-skills/                30 skill ở một nguồn (28 dùng chung + 2 skill Codex-only)
+skills/                31 skill ở một nguồn (28 dùng chung + 3 skill Codex-only)
 rules/common.md        nguồn rules chung của hai agent
 claude/CLAUDE.md       overlay rules riêng Claude Code
 codex/AGENTS.md        overlay rules riêng Codex
 install.sh
 uninstall.sh           gỡ theo ownership, có check và backup/restore
 scripts/dotagents_lifecycle.py  ledger và thao tác gỡ/khôi phục
+scripts/english_hook_install.py  hook English của Codex và ownership riêng
 SUPERPOWERS-LICENSE    MIT, cho 14 skill copy từ obra/superpowers
 ```
 
@@ -246,7 +257,7 @@ Thêm agent mới sau này: thêm nhánh cài đặt tương ứng; metadata `ag
 
 **Rules** — mặc định trả lời tiếng Việt; quy định cách dùng quy trình Superpowers, yêu cầu worktree riêng, kiểm UI, cách viết và hoàn tất plan, các skill opt-in, cùng checklist Git identity bắt buộc trước commit và push.
 
-**Skills** — 30 skill nằm trong `skills/`. Claude Code cài 28; Codex cài cả 30. Danh mục bên dưới được chia theo mục đích. Tên skill mở file `SKILL.md` tương ứng.
+**Skills** — 31 skill nằm trong `skills/`. Claude Code cài 28; Codex cài cả 31. Danh mục bên dưới được chia theo mục đích. Tên skill mở file `SKILL.md` tương ứng.
 
 ### Quy trình Superpowers — 14 skill
 
@@ -269,7 +280,7 @@ Các skill quy trình được lấy từ [obra/superpowers](https://github.com/
 | [finishing-a-development-branch](skills/finishing-a-development-branch/SKILL.md) | Hoàn tất nhánh sau khi kiểm tra đã đạt. |
 | [writing-skills](skills/writing-skills/SKILL.md) | Viết hoặc sửa skill và kiểm tra skill trước khi cài. |
 
-### Quy trình và tiện ích riêng của dotagents — 11 skill
+### Quy trình và tiện ích riêng của dotagents — 12 skill
 
 | Skill | Dùng để |
 |---|---|
@@ -277,6 +288,7 @@ Các skill quy trình được lấy từ [obra/superpowers](https://github.com/
 | [ch-build-map](skills/ch-build-map/SKILL.md) | Xây hoặc sửa phòng, khu vực, level Unreal theo spatial spec, gồm asset, collision, ánh sáng và kiểm tra hình ảnh. |
 | [ch-research](skills/ch-research/SKILL.md) | Nghiên cứu câu hỏi mở hoặc cần thông tin mới nhất bằng nhiều subagent, kiểm tra chéo nguồn và tổng hợp có trích dẫn. |
 | [ch-updating-skill-models](skills/ch-updating-skill-models/SKILL.md) | Audit model/reasoning của skill Codex, đưa proposal trước và chỉ áp dụng proposal đã được duyệt. |
+| [ch-learn-english](skills/ch-learn-english/SKILL.md) | Chỉ Codex: bật/tắt học tiếng Anh theo chat, chú thích từ/cụm và lưu các mục đã biết dùng chung trên máy. |
 | [ch-capturing-what-worked](skills/ch-capturing-what-worked/SKILL.md) | Cân nhắc ghi lại bài học có ích sau khi task đã được kiểm chứng. |
 | [ch-verifying-ui-with-playwright](skills/ch-verifying-ui-with-playwright/SKILL.md) | Mở trình duyệt bằng Playwright để kiểm tra trực tiếp thay đổi giao diện. |
 | [ch-no-clarify](skills/ch-no-clarify/SKILL.md) | Thực hiện yêu cầu hiện tại trực tiếp mà không gửi commentary giải thích. Chỉ chạy khi gọi `$ch-no-clarify`. |
@@ -359,8 +371,9 @@ Những gì installer TỰ làm, không phải đụng tay:
 | Subagent | có sẵn | `[features] multi_agent = true` |
 | Tắt plugin superpowers trùng | `settings.json` | — |
 | Bỏ trailer `Co-Authored-By` | `settings.json` | — |
+| Hook học tiếng Anh (mặc định tắt) | — | `hooks.json`, cần review/trust |
 
-Sửa config đều là **nối thêm phần còn thiếu**, không đụng gì đang có: `.claude.json` đã khai `playwright` rồi thì bỏ qua, `config.toml` đã có `[features]` thì chỉ cảnh báo chứ không sửa (khai trùng tên bảng là lỗi cú pháp TOML).
+Installer giữ config đã có và chỉ thêm phần còn thiếu. Với Codex, quyết định dựa trên TOML đã parse nên nhận ra cả inline và quoted table; `features.multi_agent` và `mcp_servers.playwright` đã có thì giữ nguyên. Key `multi_agent` thiếu được thêm vào table features thông thường hoặc quoted, giữ comment; inline features thiếu key hoặc cấu trúc không thể thêm bảng MCP an toàn khiến preflight global dừng trước khi ghi. Project không chỉnh config Codex nên không áp dụng giới hạn dạng chỉnh sửa này.
 
 ## Yêu cầu
 

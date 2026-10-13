@@ -354,6 +354,7 @@ ignore_kit_skills() {
         [ -n "$name" ] && printf '.codex/skills/%s/\n' "$name"
       done < "$codex_manifest"
       printf '.codex/skills/.dotagents-manifest\n'
+      printf '.codex/.dotagents-english-hook.json\n'
     fi
     printf '%s\n' "$e"
   } >> "$tmp"
@@ -436,27 +437,9 @@ print("  mcp    -> playwright thêm vào " + p)
 PY
 }
 
-# Codex: bật subagent và khai playwright. Chỉ nối thêm bảng còn thiếu vào cuối
-# file, không sửa gì đang có — TOML mà khai trùng tên bảng là lỗi cú pháp.
+# Codex: thêm key còn thiếu theo TOML đã parse, giữ nội dung và comment riêng.
 tune_codex_config() {
-  local f="$1/config.toml" added=0
-  [ -f "$f" ] || : > "$f"
-  if ! grep -q '^\[features\]' "$f"; then
-    printf '\n[features]\nmulti_agent = true\n' >> "$f"
-    echo "  config -> [features] multi_agent = true"
-    added=1
-  elif ! grep -q 'multi_agent' "$f"; then
-    sed -i '/^\[features\]$/a multi_agent = true' "$f"
-    echo "  config -> multi_agent = true thêm vào [features]"
-    added=1
-  fi
-  if ! grep -q '^\[mcp_servers\.playwright\]' "$f"; then
-    printf '\n[mcp_servers.playwright]\ncommand = "npx"\nargs = ["@playwright/mcp@latest"]\n' >> "$f"
-    echo "  mcp    -> playwright thêm vào $f"
-    added=1
-  fi
-  [ "$added" = 0 ] && echo "  config -> $f đã đủ"
-  return 0
+  python3 "$KIT_DIR/scripts/dotagents_lifecycle.py" codex-config "$1"
 }
 
 # Ledger snapshots stay in installer temp storage; --check never records state.
@@ -492,6 +475,9 @@ if [ "$MODE" = project ]; then
   [ "$WANT_CODEX" = 1 ] && project_targets+=("$TARGET/.codex/skills" codex)
   if [ "$RULES_ONLY" = 0 ]; then
     preflight_targets "${project_targets[@]}" || exit 1
+    if [ "$WANT_CODEX" = 1 ]; then
+      python3 "$KIT_DIR/scripts/english_hook_install.py" "$TARGET/.codex" --check
+    fi
   fi
   project_scope="PER-PROJECT tại $TARGET"
   [ "$WANT_CLAUDE" = 1 ] && project_scope+=" + Claude Code"
@@ -514,6 +500,7 @@ if [ "$MODE" = project ]; then
   if [ "$RULES_ONLY" = 0 ]; then
     [ "$WANT_CLAUDE" = 1 ] && copy_skills "$TARGET/.claude/skills" claude
     [ "$WANT_CODEX" = 1 ] && copy_skills "$TARGET/.codex/skills" codex
+    [ "$WANT_CODEX" = 1 ] && python3 "$KIT_DIR/scripts/english_hook_install.py" "$TARGET/.codex"
     [ -e "$TARGET/.git" ] && ignore_kit_skills "$TARGET"
     ignore_conversations "$TARGET"
     # Cấu hình machine-level của Claude chỉ liên quan khi cài Claude vào project.
@@ -551,6 +538,9 @@ else
     [ "$WANT_CLAUDE" = 1 ] && targets+=("$CLAUDE_DIR/skills" claude)
     [ "$WANT_CODEX" = 1 ] && targets+=("$CODEX_DIR/skills" codex)
     preflight_targets "${targets[@]}" || exit 1
+    if [ "$WANT_CODEX" = 1 ]; then
+      python3 "$KIT_DIR/scripts/english_hook_install.py" "$CODEX_DIR" --check --tune-config
+    fi
   fi
   if [ "$CHECK" = 1 ]; then
     report_check "GLOBAL"
@@ -581,6 +571,7 @@ else
     if [ "$RULES_ONLY" = 0 ]; then
       copy_skills "$CODEX_DIR/skills" codex
       tune_codex_config "$CODEX_DIR"
+      python3 "$KIT_DIR/scripts/english_hook_install.py" "$CODEX_DIR"
     else
       echo "  skills -> bỏ qua (--rules-only)"
     fi
