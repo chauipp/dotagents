@@ -16,10 +16,276 @@
     "not": {},
     "no": {},
     "i": {},
-    "code": {}
+    "code": {},
+    "yes": {},
+    "map": {
+      "forms": [
+        "mapped",
+        "mapping",
+        "maps"
+      ]
+    },
+    "use": {
+      "forms": [
+        "used",
+        "uses",
+        "using"
+      ]
+    },
+    "once": {},
+    "agent": {
+      "forms": [
+        "agents"
+      ]
+    },
+    "export": {
+      "forms": [
+        "exported",
+        "exporting",
+        "exports"
+      ]
+    },
+    "workflow": {
+      "forms": [
+        "workflows"
+      ]
+    },
+    "this": {},
+    "changes": {},
+    "a": {},
+    "existing": {},
+    "preview": {
+      "forms": [
+        "previewed",
+        "previewing",
+        "previews"
+      ]
+    },
+    "follow": {
+      "forms": [
+        "followed",
+        "following",
+        "follows"
+      ]
+    },
+    "approval": {
+      "forms": [
+        "approvals"
+      ]
+    },
+    "study": {
+      "forms": [
+        "studied",
+        "studies",
+        "studying"
+      ]
+    },
+    "or": {},
+    "skill": {
+      "forms": [
+        "skills"
+      ]
+    },
+    "your": {},
+    "do": {
+      "forms": [
+        "did",
+        "does",
+        "doing",
+        "done"
+      ]
+    },
+    "file": {
+      "forms": [
+        "filed",
+        "files",
+        "filing"
+      ]
+    },
+    "skeleton": {
+      "forms": [
+        "skeletons"
+      ]
+    },
+    "create": {
+      "forms": [
+        "created",
+        "creates",
+        "creating"
+      ]
+    },
+    "review": {
+      "forms": [
+        "reviewed",
+        "reviewing",
+        "reviews"
+      ]
+    },
+    "area": {
+      "forms": [
+        "areas"
+      ]
+    },
+    "understand": {
+      "forms": [
+        "understanding",
+        "understands",
+        "understood"
+      ]
+    },
+    "engine": {
+      "forms": [
+        "engines"
+      ]
+    },
+    "format": {
+      "forms": [
+        "formats",
+        "formatted",
+        "formatting"
+      ]
+    },
+    "it": {},
+    "say": {
+      "forms": [
+        "said",
+        "saying",
+        "says"
+      ]
+    },
+    "and": {},
+    "which": {},
+    "would": {},
+    "request": {
+      "forms": [
+        "requested",
+        "requesting",
+        "requests"
+      ]
+    },
+    "containing": {},
+    "reference": {
+      "forms": [
+        "referenced",
+        "references",
+        "referencing"
+      ]
+    },
+    "you": {},
+    "layout": {
+      "forms": [
+        "layouts"
+      ]
+    },
+    "that": {},
+    "all": {},
+    "saved": {
+      "forms": [
+        "save",
+        "saves",
+        "saving"
+      ]
+    },
+    "profile": {
+      "forms": [
+        "profiles"
+      ]
+    },
+    "session": {
+      "forms": [
+        "sessions"
+      ]
+    },
+    "phrase": {
+      "forms": [
+        "phrases"
+      ]
+    },
+    "id": {
+      "forms": [
+        "ids"
+      ]
+    },
+    "stored": {
+      "forms": [
+        "store",
+        "stores",
+        "storing"
+      ]
+    },
+    "continue": {
+      "forms": [
+        "continued",
+        "continues",
+        "continuing"
+      ]
+    },
+    "learning": {},
+    "grammar": {
+      "forms": [
+        "grammars"
+      ]
+    },
+    "in": {},
+    "shared": {
+      "forms": [
+        "share",
+        "shares",
+        "sharing"
+      ]
+    },
+    "can": {},
+    "dictionary": {
+      "forms": [
+        "dictionaries"
+      ]
+    },
+    "confirmed": {
+      "forms": [
+        "confirm",
+        "confirming",
+        "confirms"
+      ]
+    },
+    "save": {
+      "forms": [
+        "saved",
+        "saves",
+        "saving"
+      ]
+    },
+    "with": {},
+    "done": {
+      "forms": [
+        "did",
+        "do",
+        "does",
+        "doing"
+      ]
+    },
+    "item": {
+      "forms": [
+        "items"
+      ]
+    },
+    "now": {}
   },
   "phrases": {
-    "the commit": {}
+    "the commit": {},
+    "based on": {}
   },
-  "grammar": {}
+  "grammar": {
+    "present-simple": {
+      "label": "Hiện tại đơn",
+      "pattern": "S + V(s/es)"
+    },
+    "once-time-clause": {
+      "label": "Mệnh đề thời gian với once",
+      "pattern": "Once + S + V, S + V"
+    },
+    "present-simple-wh-question": {
+      "label": "Câu hỏi Wh ở hiện tại đơn",
+      "pattern": "Wh-word + do/does + S + V?"
+    }
+  }
 }
