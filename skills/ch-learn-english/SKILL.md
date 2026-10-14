@@ -58,3 +58,4 @@ Sync does not enable English mode. A successful local save is distinct from a su
 - Truncating a large dictionary: use lookup batches, not an incomplete list.
 - Re-explaining grammar under another ID: match existing labels/patterns; `catalog grammar --offset 0 --limit 50` returns canonical metadata, revision and next_offset. Pass `--revision HASH` on later pages, restarting at offset 0 if another chat changes the catalog.
 - Injecting translations into code: preserve runnable text and annotate prose.
+- Never label a known word or phrase with `known`, `(known)` or `đã biết`; omit its annotation and leave it as plain text.

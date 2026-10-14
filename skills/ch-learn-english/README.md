@@ -47,6 +47,8 @@ Commit `.gitignore` và knowledge.json, rồi push đầu tiên lên nhánh đư
 
 Khi bạn nói đã biết một mục, skill lưu ngay vào bản local. Không tự commit hoặc chạy mạng sau mỗi câu chat.
 
+Mục đã biết sẽ xuất hiện như văn bản bình thường. Skill không thêm chữ `known`, `(known)` hoặc `đã biết` sau mục đó.
+
 ```text
 $ch-learn-english sync
 $ch-learn-english sync --push
