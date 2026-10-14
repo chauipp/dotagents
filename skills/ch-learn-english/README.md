@@ -6,11 +6,11 @@ Học tiếng Anh trong các chat bạn chọn. Bật bằng `$ch-learn-english 
 
 Mỗi máy cài skill bằng `./install.sh --codex` từ repo dotagents. Dữ liệu học mặc định ở `~/.local/state/dotagents/ch-learn-english/knowledge.json`. File này lưu các mục đã biết, chưa phải nhật ký toàn bộ bài học hay hệ thống ôn tập.
 
-Để dùng chung giữa các máy, tạo một Git repository **private**, riêng cho profile học của bạn. Skill được cập nhật độc lập; profile có lịch sử Git riêng. Không lưu token hay SSH key trong profile.
+Để dùng chung giữa các máy, dùng một Git repository **public hoặc private**, theo lựa chọn của bạn. Có thể dùng repo riêng hoặc một thư mục profile trong repo hiện có. Skill hỗ trợ cả hai mức truy cập. Không lưu token hay SSH key trong profile.
 
 ## Thiết lập máy đầu tiên
 
-Tạo repo private trên dịch vụ Git bạn dùng, clone vào một thư mục riêng, ví dụ `~/dotagents-learning/ch-learn-english`. Dùng đường dẫn thực tế của bạn khi chạy các lệnh. Đảm bảo repo có nhánh và upstream; với repo trống, cần commit/push đầu tiên và thiết lập upstream trước khi gọi sync.
+Tạo repo public/private trên dịch vụ Git bạn dùng, clone vào một thư mục riêng, ví dụ `~/dotagents-learning/ch-learn-english`. Hoặc chọn thư mục profile trong repo đang có. Dùng đường dẫn thực tế của bạn khi chạy các lệnh. Đảm bảo repo có nhánh và upstream; với repo trống, cần commit/push đầu tiên và thiết lập upstream trước khi gọi sync.
 
 Tạo `.gitignore` trong profile với nội dung sau để chỉ theo dõi các file cần thiết:
 
@@ -58,7 +58,22 @@ Trước khi đổi máy, dùng `sync --push`; khi bắt đầu ở máy còn l�
 
 ## Máy mới
 
-Clone cùng repo private vào thư mục bạn chọn, cài skill, cấu hình DOTAGENTS_ENGLISH_STATE_DIR trỏ tới clone và khởi động Codex trong môi trường đó. Kiểm tra helper `list`: các mục đã push phải xuất hiện. Bật học cho từng chat bằng `on`; không đồng bộ trạng thái chat.
+Clone cùng repo public/private vào thư mục bạn chọn, cài skill, cấu hình DOTAGENTS_ENGLISH_STATE_DIR trỏ tới thư mục profile và khởi động Codex trong môi trường đó. Kiểm tra helper `list`: các mục đã push phải xuất hiện. Bật học cho từng chat bằng `on`; không đồng bộ trạng thái chat.
+
+## Profile trong repo dotagents
+
+Profile học hiện được lưu tại `learning/ch-learn-english/knowledge.json` trong repo này, ngoài thư mục mã nguồn skill. `.gitignore` trong profile giữ session, lock và file tạm ở local. Các mục đã biết hiện có được sao chép từ từ điển local; file gốc vẫn được giữ lại.
+
+Sau khi clone repo trên mỗi máy, từ root repo chạy:
+
+```bash
+export DOTAGENTS_ENGLISH_STATE_DIR="$PWD/learning/ch-learn-english"
+python3 "$HOME/.codex/skills/ch-learn-english/scripts/english_state.py" list
+```
+
+Khởi động Codex trong môi trường có biến này để helper và hook ghi trực tiếp vào profile trong repo. Việc push một bản knowledge.json không tự đổi thư mục dữ liệu của ứng dụng đang chạy: trước khi cấu hình, ứng dụng vẫn ghi vào vị trí mặc định. Nếu đã học thêm ở vị trí mặc định sau lần sao chép, đối chiếu dữ liệu trước khi chuyển.
+
+Git merge áp dụng cho cả nhánh của repo dùng chung, có thể mang theo cập nhật mã nguồn. Skill chỉ stage/commit knowledge.json trong profile. Nếu nhánh còn commit mã nguồn chưa push, riêng sync --push sẽ báo để bạn quyết định; nó không tự coi lệnh đồng bộ dữ liệu là quyền push mọi thay đổi mã nguồn.
 
 ## Khi Git báo conflict
 
