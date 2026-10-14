@@ -255,15 +255,21 @@ def handle_hook(payload, store=None):
     prompt = payload.get("prompt", "")
     if not isinstance(prompt, str):
         raise ValueError("Hook prompt must be a string")
-    match = re.fullmatch(r"\$ch-learn-english(?:\s+(\S+))?", prompt.strip())
+    match = re.fullmatch(r"\$ch-learn-english(?:\s+(sync\s+--push|\S+))?", prompt.strip())
     control = (match[1] or "status") if match else None
+    if control and control.startswith("sync"):
+        control = " ".join(control.split())
     initial = store.status(session)
 
     def operation():
         state = store._set_session(session, control == "on") if control in ("on", "off") else store.status(session)
         context = context_for(store, state, control)
-        if match and control not in ("on", "off", "status"):
-            context += "\nInvalid argument; show $ch-learn-english on|off|status. State was not changed."
+        if control in ("sync", "sync --push"):
+            context += ("\nGit profile synchronization requested. Read this skill's SKILL.md "
+                        "Git learning profile section and execute its workflow. The hook only "
+                        "recognizes the request; no Git operation has run. Preserve language mode.")
+        elif match and control not in ("on", "off", "status"):
+            context += "\nInvalid argument; show $ch-learn-english on|off|status|sync [--push]. State was not changed."
         return {"hookSpecificOutput": {"hookEventName": "UserPromptSubmit", "additionalContext": context}}
 
     # Serialize receipt check and control mutation. A delayed duplicate cannot

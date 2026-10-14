@@ -52,6 +52,15 @@ class StateTests(unittest.TestCase):
         self.event("Explain what '$ch-learn-english on' means")
         self.assertFalse(self.store.status("chat-A")["enabled"])
 
+    def test_git_sync_controls_preserve_language_mode(self):
+        for enabled in (False, True):
+            self.store.set_session("chat-A", enabled)
+            for prompt in ("$ch-learn-english sync", "$ch-learn-english sync --push"):
+                context = self.event(prompt)["hookSpecificOutput"]["additionalContext"]
+                self.assertNotIn("Invalid argument", context)
+                self.assertIn("Git profile synchronization", context)
+                self.assertEqual(self.store.status("chat-A")["enabled"], enabled)
+
     def test_dictionary_shared_and_forms_independent_from_phrases(self):
         self.store.learn("words", "Asset", forms=["assets"])
         self.store.learn("grammar", "second-conditional", label="Câu điều kiện loại 2", pattern="If + past, would + verb")

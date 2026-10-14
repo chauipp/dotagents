@@ -1,6 +1,6 @@
 ---
 name: ch-learn-english
-description: Use when the user explicitly invokes $ch-learn-english on, off or status, or when a trusted per-chat hook confirms English learning is enabled in the current chat.
+description: Use when the user explicitly invokes $ch-learn-english on, off, status or sync, or when a trusted per-chat hook confirms English learning is enabled in the current chat.
 agents: codex
 ---
 
@@ -13,6 +13,8 @@ English learning is opt-in per chat. The personal known-item dictionary is share
 | `$ch-learn-english on` | Enable only this chat |
 | `$ch-learn-english off` | Disable only this chat; keep learned data |
 | `$ch-learn-english status` or bare skill | Report current status without changing it |
+| `$ch-learn-english sync` | Agent commits and merges the Git learning profile locally |
+| `$ch-learn-english sync --push` | Same workflow, then push the learning profile |
 
 ## State and control
 
@@ -33,6 +35,20 @@ python3 <this-skill>/scripts/english_state.py learn grammar second-conditional -
 Resolve `<this-skill>` to this SKILL.md's actual directory and quote paths/terms safely. Use `lookup words asset assets`, `lookup phrases 'carry out'`, or `lookup grammar second-conditional` to check; `list` reads the full dictionary. `forget KIND TERM` removes a mistaken canonical entry so it is explained again. Never say 'saved' after a permission or write failure.
 
 Default storage: `${XDG_STATE_HOME:-~/.local/state}/dotagents/ch-learn-english/knowledge.json` plus `sessions/<chat-id>.json`. `DOTAGENTS_ENGLISH_STATE_DIR` selects a different absolute location. Writes are locked and atomic. Updates and uninstall preserve this data. State is local to this machine; there is no automatic cross-machine sync.
+
+## Git learning profile
+
+Read [README.md](README.md) for setup and migration. Sync is an agent-operated workflow, not an english_state.py subcommand. The hook recognizes sync without changing ON/OFF and never runs Git or accesses the network itself. Normal learning only writes local data. Use the state directory as a dedicated private Git clone; only knowledge.json is versioned. Sessions, turn receipts and locks remain untracked on each machine.
+
+On an explicit sync request:
+
+1. Resolve the effective state directory using DOTAGENTS_ENGLISH_STATE_DIR or the default. Verify it is the Git repository root, on a named branch with an explicitly configured upstream. If no profile/remote exists, explain setup; never operate on the current project as a substitute. Pause other learning chats on this machine during sync; the helper's write lock does not protect external Git operations.
+2. Inspect git status, tracked files, index and merge/rebase state. Only .gitignore, README.md and knowledge.json may be tracked in this dedicated profile. The index must be empty; reject unrelated modifications, ongoing operations or tracked runtime files before staging. Validate current knowledge using `python3 <this-skill>/scripts/english_state.py list` in the same environment. Check the remote destination and upstream branch.
+3. Fetch the configured upstream remote. If fetch fails, leave local knowledge unchanged and report unsynced data. If knowledge.json changed, stage only that file. Before each commit, run git config user.name, git config user.email, git diff --cached --check and read the complete git diff --cached. Stop if identity is absent; never set identity or add tool attribution. Commit with a descriptive message such as `Update learned English items`.
+4. Merge the fetched upstream using `git merge --no-edit <upstream>`. Before a potential merge commit, check identity again, require a clean index and inspect both the full remote diff and its commit metadata. Git handles ordinary text merging. On conflict, stop and report the file and local commit; do not choose ours/theirs, reset or force anything. The user resolves the conflict and finishes the merge before retrying sync. Validate the merged knowledge with the helper; invalid JSON/schema stops completion and push, preserving the file for repair.
+5. With sync alone, report the local result and commits still awaiting push. Only sync --push authorizes pushing this profile. Before push, repeat identity, index checks and complete staged diff inspection; inspect the exact outgoing commits and full outgoing diff, confirming they contain only profile data and no tool attribution. Push to the verified upstream without force. A rejected push means the remote changed: report that another sync is needed, preserving local commits. Report success only on successful push.
+
+Sync does not enable English mode. A successful local save is distinct from a successful remote sync. Fetch/merge/push conflicts and network failures must be reported accurately. Git locks are local to each clone; independent additions can still produce textual conflicts in knowledge.json. The workflow does not perform semantic merging or promise automatic 5+10 aggregation.
 
 ## Common mistakes
 
