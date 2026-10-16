@@ -64,16 +64,16 @@ Clone cùng repo public/private vào thư mục bạn chọn, cài skill, cấu 
 
 ## Profile trong repo dotagents
 
-Profile học hiện được lưu tại `learning/ch-learn-english/knowledge.json` trong repo này, ngoài thư mục mã nguồn skill. `.gitignore` trong profile giữ session, lock và file tạm ở local. Các mục đã biết hiện có được sao chép từ từ điển local; file gốc vẫn được giữ lại.
+Nếu dùng chính repo `dotagents` làm profile Git, đây là lựa chọn được khuyến nghị cho repo này. Profile học được lưu tại `learning/ch-learn-english/knowledge.json`, ngoài thư mục mã nguồn skill. `.gitignore` trong profile giữ session, lock và file tạm ở local. Các mục đã biết hiện có được sao chép từ từ điển local; file gốc vẫn được giữ lại.
 
-Sau khi clone repo trên mỗi máy, từ root repo chạy:
+Sau khi clone repo trên mỗi máy, từ **root của repo** chạy lệnh sau. Dùng `$PWD` để đường dẫn tự thích ứng với vị trí clone trên máy đó; không copy một đường dẫn tuyệt đối từ máy khác:
 
 ```bash
 export DOTAGENTS_ENGLISH_STATE_DIR="$PWD/learning/ch-learn-english"
 python3 "$HOME/.codex/skills/ch-learn-english/scripts/english_state.py" list
 ```
 
-Khởi động Codex trong môi trường có biến này để helper và hook ghi trực tiếp vào profile trong repo. Việc push một bản knowledge.json không tự đổi thư mục dữ liệu của ứng dụng đang chạy: trước khi cấu hình, ứng dụng vẫn ghi vào vị trí mặc định. Nếu đã học thêm ở vị trí mặc định sau lần sao chép, đối chiếu dữ liệu trước khi chuyển.
+Khởi động Codex trong chính môi trường có biến này để helper và hook ghi trực tiếp vào profile trong repo. Nếu mở Codex từ desktop hoặc một shell khác, biến có thể không được truyền sang; khi đó ứng dụng vẫn ghi vào vị trí mặc định. Việc push một bản `knowledge.json` cũng không tự đổi thư mục dữ liệu của ứng dụng đang chạy. Nếu đã học thêm ở vị trí mặc định sau lần sao chép, đối chiếu dữ liệu trước khi chuyển.
 
 Git merge áp dụng cho cả nhánh của repo dùng chung, có thể mang theo cập nhật mã nguồn. Skill chỉ stage/commit knowledge.json trong profile. Nếu nhánh còn commit mã nguồn chưa push, riêng sync --push sẽ báo để bạn quyết định; nó không tự coi lệnh đồng bộ dữ liệu là quyền push mọi thay đổi mã nguồn.
 

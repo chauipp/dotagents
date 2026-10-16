@@ -122,6 +122,8 @@ Sau khi cài, khởi động lại Codex rồi review/trust hook trong Codex; in
 
 Gọi `$ch-learn-english on`, `$ch-learn-english off` hoặc `$ch-learn-english status`. Chế độ chỉ áp dụng cho chat hiện tại; khi bật, agent sửa ngữ pháp yêu cầu tiếng Anh, trả lời tiếng Anh và chú thích từ/cụm chưa biết bằng tiếng Việt. Khi tắt, trở về mặc định tiếng Việt. Từ/cụm/cấu trúc đã học dùng chung trên máy trong `$XDG_STATE_HOME/dotagents/ch-learn-english` (mặc định `~/.local/state/dotagents/ch-learn-english`), có thể chọn vị trí bằng `DOTAGENTS_ENGLISH_STATE_DIR`.
 
+Nếu dùng profile trong repo này làm nguồn trực tiếp, chạy từ root repo sau mỗi lần clone: `export DOTAGENTS_ENGLISH_STATE_DIR="$PWD/learning/ch-learn-english"`, rồi khởi động Codex trong cùng môi trường. Dùng `$PWD` để không phụ thuộc vị trí tuyệt đối của repo trên từng máy; xem [hướng dẫn profile](skills/ch-learn-english/README.md#profile-trong-repo-dotagents) để biết thêm về shell/desktop environment.
+
 Uninstall đầy đủ chỉ gỡ group khớp chính xác ledger, giữ các group riêng kể cả được sửa sau khi cài, và không xóa knowledge/sessions ngoài repo. Nếu group English bị sửa hoặc trùng thì giữ group và ledger để người dùng xử lý; helper trong skill vẫn bị gỡ theo manifest nên cần kiểm tra lại command còn giữ. `--rules-only` giữ hook và ledger. Backup/restore bao gồm cả file hook thay đổi và ledger.
 
 ### Cài riêng cho một dự án
