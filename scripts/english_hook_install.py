@@ -79,7 +79,13 @@ def preflight(root, tune_config=False):
     config = config_data(root / "config.toml")
     if tune_config:
         codex_config_output(root)
-    inline = {"hooks": config.get("hooks", {})}
+    inline_hooks = config.get("hooks", {})
+    if isinstance(inline_hooks, dict):
+        # Codex stores hook trust metadata under [hooks.state]. It is not an
+        # inline hook event and therefore does not have the event-array shape.
+        inline_hooks = {event: groups for event, groups in inline_hooks.items()
+                        if event != "state"}
+    inline = {"hooks": inline_hooks}
     validate_hooks(inline, root / "config.toml")
     # Reject invalid containers before tune_codex_config can append into them.
     for key in ("features", "mcp_servers"):

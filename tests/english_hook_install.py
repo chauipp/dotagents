@@ -116,6 +116,16 @@ class HookInstallTests(unittest.TestCase):
                     hook.install(self.root)
                 self.assertEqual(before, self.snapshot())
 
+    def test_codex_hook_state_metadata_is_ignored(self):
+        (self.root / "config.toml").write_text(
+            "[hooks.state]\n"
+            "\n"
+            "[hooks.state.\"/tmp/hooks.json:user_prompt_submit:0:0\"]\n"
+            "trusted_hash = \"sha256:example\"\n"
+        )
+        hook.install(self.root, check=True)
+        self.assertFalse(self.path.exists())
+
     def test_global_config_preflight_rejects_unsupported_inline_edit(self):
         path = self.root / "config.toml"
         for source in ('features = { personal = true }\n',
